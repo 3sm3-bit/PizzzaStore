@@ -3,6 +3,7 @@ package com.pizzza.pizzzastore.ui
 import android.content.Intent
 import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.lifecycleScope
 import com.pizzza.pizzzastore.component.AppNavigation
 import com.pizzza.pizzzastore.repository.network.WebSocketManager
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import android.content.Context
+import com.valu.uitaycompose.utils.permission.rememberUiTayPermissionManager
+import android.util.Log
 
 class MainActivity : BaseActivity() {
 
@@ -22,6 +25,16 @@ class MainActivity : BaseActivity() {
 
     @Composable
     override fun SetScreenConfig() {
+        val permissionManager = rememberUiTayPermissionManager()
+        
+        LaunchedEffect(Unit) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                permissionManager.requestPermission(android.Manifest.permission.POST_NOTIFICATIONS) {
+                    Log.d("Notifications", "Permiso otorgado al iniciar la app")
+                }
+            }
+        }
+
         AppNavigation(
             viewModel = viewModel,
             storeViewModel = storeViewModel

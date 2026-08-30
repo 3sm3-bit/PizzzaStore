@@ -1,6 +1,5 @@
 package com.pizzza.pizzzastore.ui.orders
 
-import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,12 +24,10 @@ import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.model.ParentOrderModel
 import com.pizzza.pizzzastore.ui.AppViewModel
 import com.valu.uitaycompose.utils.*
-import com.valu.uitaycompose.utils.permission.rememberUiTayPermissionManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
-    val permissionManager = rememberUiTayPermissionManager()
     val uiState = viewModel.orderUiState
     var showSheet by remember { mutableStateOf(false) }
 
@@ -40,12 +37,6 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
 
     LaunchedEffect(Unit) {
         viewModel.getGeneralOrderList()
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionManager.requestPermission(android.Manifest.permission.POST_NOTIFICATIONS) {
-                Log.d("Notifications", "Permission granted for order alerts")
-            }
-        }
     }
 
     Scaffold(
