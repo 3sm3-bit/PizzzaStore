@@ -11,8 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -20,7 +18,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -90,31 +87,6 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Switch para Notificaciones
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (uiState.notificationsEnabled) Icons.Default.Notifications 
-                                              else Icons.Default.NotificationsOff,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = if (uiState.notificationsEnabled) Color(0xFF10B981) else Color.Gray
-                            )
-                            Switch(
-                                checked = uiState.notificationsEnabled,
-                                onCheckedChange = { viewModel.toggleNotifications() },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0xFF10B981),
-                                    uncheckedThumbColor = Color.White,
-                                    uncheckedTrackColor = Color(0xFFDDDFE2)
-                                ),
-                                modifier = Modifier.scale(0.7f) // Hacerlo un poco más pequeño para que encaje bien
-                            )
-                        }
-
                         IconButton(
                             onClick = { viewModel.refresh() },
                             modifier = Modifier

@@ -195,14 +195,6 @@ class AppViewModel(
         orderUiState = orderUiState.copy(selectedCategory = category)
     }
 
-    fun toggleNotifications() {
-        orderUiState = orderUiState.copy(notificationsEnabled = !orderUiState.notificationsEnabled)
-    }
-
-    fun setNotificationsEnabled(enabled: Boolean) {
-        orderUiState = orderUiState.copy(notificationsEnabled = enabled)
-    }
-
     fun updateProduct(product: ProductModel, onSuccess: () -> Unit) {
         execute {
             try {
