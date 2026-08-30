@@ -28,6 +28,7 @@ keystore.properties
 .idea/
 /uitaycompose/
 
-# --- Artifacts & Kotlin metadata ---
+# --- Temp / AI artifacts ---
 .artifacts/
 .kotlin/
+.DS_Store
