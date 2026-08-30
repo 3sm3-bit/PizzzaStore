@@ -80,8 +80,12 @@ class WebSocketService : Service() {
     }
 
     private fun setupWebSocket() {
-        // Conectar al socket
-        webSocketManager.connect(branchId = "1")
+        // Obtener el branchId de las preferencias
+        val prefs = getSharedPreferences("pizza_prefs", Context.MODE_PRIVATE)
+        val branchId = prefs.getString("selected_branch_id", "1") ?: "1"
+        
+        println("🍕 WebSocketService - Conectando a sucursal: $branchId")
+        webSocketManager.connect(branchId = branchId)
 
         // Escuchar notificaciones
         webSocketManager.notifications

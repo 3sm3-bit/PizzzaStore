@@ -39,6 +39,9 @@ object EditOtherProduct
 object Branches
 
 @Serializable
+object ConfigNoti
+
+@Serializable
 object EditBranch
 
 @Serializable

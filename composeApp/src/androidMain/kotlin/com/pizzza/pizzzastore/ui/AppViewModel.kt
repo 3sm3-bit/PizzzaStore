@@ -191,6 +191,14 @@ class AppViewModel(
         orderUiState = orderUiState.copy(selectedProduct = product)
     }
 
+    fun updateSelectedBranchForNotifications(branchId: String) {
+        orderUiState = orderUiState.copy(selectedBranchId = branchId)
+    }
+
+    fun setInitialSelectedBranchId(branchId: String) {
+        orderUiState = orderUiState.copy(selectedBranchId = branchId)
+    }
+
     fun setCategory(category: String) {
         orderUiState = orderUiState.copy(selectedCategory = category)
     }

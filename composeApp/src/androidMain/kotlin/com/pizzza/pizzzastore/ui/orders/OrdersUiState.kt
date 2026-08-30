@@ -15,6 +15,7 @@ data class OrderUiState(
     val selectedProduct: ProductModel? = null,
     val branches: List<BranchModel> = emptyList(),
     val selectedBranch: BranchModel? = null,
+    val selectedBranchId: String = "1",
     val selectedCategory: String = "Pizza",
     val pizzaProducts: List<ProductModel> = emptyList(),
     val extraProducts: List<ProductModel> = emptyList(),

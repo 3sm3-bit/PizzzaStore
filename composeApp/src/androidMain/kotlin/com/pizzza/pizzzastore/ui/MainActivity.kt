@@ -11,17 +11,22 @@ import com.pizzza.pizzzastore.ui.base.BaseActivity
 import com.pizzza.pizzzastore.ui.base.BaseViewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import android.content.Context
 import com.valu.uitaycompose.utils.permission.rememberUiTayPermissionManager
 import android.util.Log
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
+import androidx.lifecycle.repeatOnLifecycle
 
 class MainActivity : BaseActivity() {
 
     private val viewModel : AppViewModel by viewModel()
     private val storeViewModel : StoreViewModel by viewModel()
     private val webSocketManager: WebSocketManager by inject()
+    
+    private val prefs by lazy { getSharedPreferences("pizza_prefs", MODE_PRIVATE) }
 
     @Composable
     override fun SetScreenConfig() {
@@ -42,10 +47,36 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setDataGlobal() {
+        // Cargar el ID de sucursal guardado (default "1")
+        val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
+        viewModel.setInitialSelectedBranchId(savedBranchId)
+
         observeSocketForRefresh()
         
         // Iniciar el servicio de notificaciones automáticamente al abrir la app
         startWebSocketService()
+        
+        // Observar cambios en el ID de sucursal para guardarlos y reiniciar el servicio
+        observeBranchIdChanges()
+    }
+
+    private fun observeBranchIdChanges() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                snapshotFlow { viewModel.orderUiState.selectedBranchId }
+                    .collectLatest { branchId ->
+                        val currentSaved = prefs.getString("selected_branch_id", "1")
+                        if (branchId != currentSaved) {
+                            println("🍕 MainActivity - Cambio de sucursal detectado: $branchId. Guardando y reiniciando servicio.")
+                            prefs.edit().putString("selected_branch_id", branchId).apply()
+                            
+                            // Reiniciar el servicio para que tome el nuevo branchId
+                            stopWebSocketService()
+                            startWebSocketService()
+                        }
+                    }
+            }
+        }
     }
 
     private fun startWebSocketService() {
@@ -55,6 +86,11 @@ class MainActivity : BaseActivity() {
         } else {
             startService(intent)
         }
+    }
+
+    private fun stopWebSocketService() {
+        val intent = Intent(this, com.pizzza.pizzzastore.service.WebSocketService::class.java)
+        stopService(intent)
     }
 
     private fun observeSocketForRefresh() {

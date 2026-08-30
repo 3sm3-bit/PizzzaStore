@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,6 +19,7 @@ import com.valu.uitaycompose.utils.textB20
 fun MenuOptionsScreen(
     onNavigateToProducts: () -> Unit,
     onNavigateToBranches: () -> Unit,
+    onNavigateToConfigNoti: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -65,6 +67,18 @@ fun MenuOptionsScreen(
                 Icon(Icons.Default.LocationOn, contentDescription = null)
                 Spacer(Modifier.width(12.dp))
                 Text("Sucursales")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = onNavigateToConfigNoti,
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
+            ) {
+                Icon(Icons.Default.Notifications, contentDescription = null)
+                Spacer(Modifier.width(12.dp))
+                Text("Notificaciones")
             }
         }
     }

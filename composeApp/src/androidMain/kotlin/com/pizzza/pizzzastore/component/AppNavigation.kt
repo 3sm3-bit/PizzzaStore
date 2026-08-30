@@ -13,6 +13,7 @@ import com.pizzza.pizzzastore.ui.products.EditOtherProductScreen
 import com.pizzza.pizzzastore.ui.menu.MenuOptionsScreen
 import com.pizzza.pizzzastore.ui.branches.BranchScreen
 import com.pizzza.pizzzastore.ui.branches.EditBranchScreen
+import com.pizzza.pizzzastore.ui.menu.ConfigNotiScreen
 import com.pizzza.pizzzastore.ui.splash.SplashScreen
 
 @Composable
@@ -47,6 +48,17 @@ fun AppNavigation(
                 onNavigateToBranches = {
                     navController.navigate(Branches)
                 },
+                onNavigateToConfigNoti = {
+                    storeViewModel.getBranchesList()
+                    navController.navigate(ConfigNoti)
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<ConfigNoti> {
+            ConfigNotiScreen(
+                appViewModel = viewModel,
+                storeViewModel = storeViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
