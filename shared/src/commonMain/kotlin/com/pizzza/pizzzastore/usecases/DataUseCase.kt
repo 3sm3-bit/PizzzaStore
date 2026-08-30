@@ -21,6 +21,8 @@ class DataUseCase(private val iDataNetwork: IDataNetwork) {
 
     suspend fun updateProduct(data: ProductModel) = iDataNetwork.updateProduct(data)
 
+    suspend fun uploadProductImage(image: ByteArray) = iDataNetwork.uploadProductImage(image)
+
     suspend fun getBranches() = iDataNetwork.getBranches()
 
     suspend fun updateBranch(data: BranchModel) = iDataNetwork.updateBranch(data)

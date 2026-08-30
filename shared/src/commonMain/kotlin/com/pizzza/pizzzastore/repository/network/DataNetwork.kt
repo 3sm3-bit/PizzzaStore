@@ -72,6 +72,17 @@ class DataNetwork(
         apiService.updateProduct(data.toResponse())
     }
 
+    override suspend fun uploadProductImage(image: ByteArray): String = apiCall({
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        apiService.uploadProductImage(image)
+    }) {
+        if (it.ok && it.urlImg != null) {
+            it.urlImg
+        } else {
+            throw Exception(it.msg ?: "Error al subir imagen")
+        }
+    }
+
     override suspend fun updateOrder(data: ParentOrderModel): String = apiCall {
         if (!connectivityManager.isConnected()) throw ErrorNetwork()
         println("DataNetwork: Actualizando pedido ${data.uid} a estado ${data.state}...")

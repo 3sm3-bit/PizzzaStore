@@ -17,6 +17,11 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.forms.submitFormWithBinaryData
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import com.pizzza.pizzzastore.repository.network.model.UploadImageResponse
 
 class KmmService(private val client: HttpClient) {
 
@@ -26,6 +31,18 @@ class KmmService(private val client: HttpClient) {
         } else {
             BuildConfig.BASE_URL_SERVICE
         }
+    }
+
+    suspend fun uploadProductImage(image: ByteArray): UploadImageResponse {
+        return client.submitFormWithBinaryData(
+            url = "${BASE_URL}/upload-image",
+            formData = formData {
+                append("image", image, Headers.build {
+                    append(HttpHeaders.ContentType, "image/jpeg")
+                    append(HttpHeaders.ContentDisposition, "filename=\"product_image.jpg\"")
+                })
+            }
+        ).body()
     }
 
     suspend fun getOrder(): List<OrderResponse> {

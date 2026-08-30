@@ -20,6 +20,8 @@ interface IDataNetwork {
 
     suspend fun updateProduct(data: ProductModel): String
 
+    suspend fun uploadProductImage(image: ByteArray): String
+
     suspend fun getBranches(): List<BranchModel>
 
     suspend fun updateBranch(data: BranchModel): String

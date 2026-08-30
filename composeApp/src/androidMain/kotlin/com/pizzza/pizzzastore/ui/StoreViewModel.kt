@@ -85,6 +85,20 @@ class StoreViewModel(
         }
     }
 
+    fun uploadProductImage(image: ByteArray, onSuccess: (String) -> Unit) {
+        execute {
+            try {
+                val url = dataUseCase.uploadProductImage(image)
+                withContext(dispatchers.main) {
+                    onSuccess(url)
+                }
+            } catch (e: Exception) {
+                Log.e("StoreViewModel", "Error al subir imagen: ${e.message}", e)
+                throw e
+            }
+        }
+    }
+
     fun selectBranch(branch: BranchModel?) {
         storeUiState = storeUiState.copy(selectedBranch = branch)
     }

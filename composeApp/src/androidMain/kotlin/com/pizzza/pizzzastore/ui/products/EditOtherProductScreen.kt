@@ -1,7 +1,9 @@
 package com.pizzza.pizzzastore.ui.products
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -11,10 +13,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.pizzza.pizzzastore.model.ProductModel
 import com.pizzza.pizzzastore.ui.StoreViewModel
 import com.valu.uitaycompose.utils.textB20
+import com.valu.uitaycompose.utils.permission.rememberUiTayCameraManager
+import com.valu.uitaycompose.utils.permission.UiTayCameraManagerCompose
+import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +39,30 @@ fun EditOtherProductScreen(
     var currency by remember { mutableStateOf(product.currency) }
     var currencySymbol by remember { mutableStateOf(product.currencySymbol) }
     var stateAvailable by remember { mutableStateOf(product.state) }
+    var urlImg by remember { mutableStateOf(product.urlImg) }
+    var productBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+
+    val cameraManager = rememberUiTayCameraManager(
+        uiTayNameFilePath = "product",
+        listener = object : UiTayCameraManagerCompose.CameraControllerListener {
+            override fun onCameraPermissionDenied() {
+                android.util.Log.w("EditOtherProductScreen", "Camera permission denied")
+            }
+
+            override fun onGetImageCameraCompleted(path: String, img: Bitmap) {
+                productBitmap = img.asImageBitmap()
+                
+                // Subir imagen al servidor
+                val stream = ByteArrayOutputStream()
+                img.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+                val byteArray = stream.toByteArray()
+                
+                viewModel.uploadProductImage(byteArray) { newUrl ->
+                    urlImg = newUrl
+                }
+            }
+        }
+    )
 
     Scaffold(
         topBar = {
@@ -48,7 +81,8 @@ fun EditOtherProductScreen(
                             description = description,
                             currency = currency,
                             currencySymbol = currencySymbol,
-                            state = stateAvailable
+                            state = stateAvailable,
+                            urlImg = urlImg
                         )
                         viewModel.updateProduct(updatedProduct) {
                             onBack()
@@ -73,6 +107,48 @@ fun EditOtherProductScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Sección de Imagen
+            Row(
+                modifier = Modifier.fillMaxWidth().height(150.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Card(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (productBitmap != null) {
+                            Image(
+                                bitmap = productBitmap!!,
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else if (urlImg.isNotBlank()) {
+                            Text("Imagen cargada", style = MaterialTheme.typography.bodySmall)
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Save, // Placeholder
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = Color.Gray
+                            )
+                        }
+                    }
+                }
+                
+                Button(
+                    onClick = { cameraManager.doCamera("product_img") },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Cambiar Imagen")
+                }
+            }
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
