@@ -1,4 +1,4 @@
-rootProject.name = "PizzzaApp"
+rootProject.name = "PizzzaStore"
 
 pluginManagement {
     repositories {

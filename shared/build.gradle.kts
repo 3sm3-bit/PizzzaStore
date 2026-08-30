@@ -11,7 +11,7 @@ plugins {
 }
 
 buildConfig {
-    packageName.set("com.tayler.pizzzaapp.shared")
+    packageName.set("com.pizzza.pizzzastore.shared")
     
     // Detectar si es Debug en Android o iOS (Xcode pasa la variable CONFIGURATION)
     val isIosDebug = System.getenv("CONFIGURATION") == "Debug"
@@ -82,7 +82,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.tayler.pizzzaapp.shared"
+    namespace = "com.pizzza.pizzzastore.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

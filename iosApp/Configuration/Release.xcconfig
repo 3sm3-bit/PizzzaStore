@@ -1,4 +1,4 @@
 #include "Config.xcconfig"
 
 APP_NAME = PizzzaApp
-APP_BUNDLE_IDENTIFIER = com.tayler.pizzzaapp
+APP_BUNDLE_IDENTIFIER = com.pizzza.pizzzaapp

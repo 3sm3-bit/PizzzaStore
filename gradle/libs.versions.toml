@@ -13,6 +13,9 @@ composeMultiplatform = "1.11.1"
 junit = "4.13.2"
 kotlin = "2.4.10"
 material3 = "1.11.0-alpha07"
+google-maps = "6.1.0"
+play-services-maps = "19.0.0"
+play-services-location = "21.3.0"
 
 ksp = "2.3.11"
 room = "2.8.4"
@@ -92,6 +95,9 @@ datastore-preferences = { module = "androidx.datastore:datastore-preferences", v
 # Navigation & UI Helpers
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 accompanist-systemuicontroller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
+google-maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "google-maps" }
+play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
 
 # Custom Libraries
 tay-compose-library = { module = "com.github.montes8:UITayCompose", version = "1.0.0" }
