@@ -27,3 +27,7 @@ keystore.properties
 # --- IDE (Android Studio / IntelliJ) ---
 .idea/
 /uitaycompose/
+
+# --- Artifacts & Kotlin metadata ---
+.artifacts/
+.kotlin/
