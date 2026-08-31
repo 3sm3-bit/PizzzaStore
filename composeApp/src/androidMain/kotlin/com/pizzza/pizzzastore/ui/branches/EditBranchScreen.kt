@@ -51,12 +51,14 @@ fun EditBranchScreen(
                 }
             }
         },
-        containerColor = Color(0xFFF0F2F5)
+        containerColor = Color(0xFFF0F2F5),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)

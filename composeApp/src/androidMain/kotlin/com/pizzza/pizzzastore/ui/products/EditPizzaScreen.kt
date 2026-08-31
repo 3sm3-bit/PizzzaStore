@@ -101,12 +101,14 @@ fun EditPizzaScreen(
                 }
             }
         },
-        containerColor = Color.White
+        containerColor = Color.White,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .padding(16.dp)
                 .background(Color.White)
                 .verticalScroll(rememberScrollState()),
