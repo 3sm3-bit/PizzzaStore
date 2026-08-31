@@ -1,6 +1,12 @@
 package com.pizzza.pizzzastore.component
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -24,6 +30,7 @@ fun AppNavigation(
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Splash) {
         composable<Splash> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             SplashScreen(
                 viewModel = viewModel,
                 onFinished = {
@@ -35,11 +42,13 @@ fun AppNavigation(
         }
         
         composable<Orders> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
             OrderScreen(viewModel, onNavigateToMenuOptions = {
                 navController.navigate(MenuOptions)
             })
         }
         composable<MenuOptions> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             MenuOptionsScreen(
                 onNavigateToProducts = {
                     storeViewModel.getProductsList()
@@ -56,6 +65,7 @@ fun AppNavigation(
             )
         }
         composable<ConfigNoti> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             ConfigNotiScreen(
                 appViewModel = viewModel,
                 storeViewModel = storeViewModel,
@@ -63,6 +73,7 @@ fun AppNavigation(
             )
         }
         composable<Products> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             ProductScreen(
                 viewModel = storeViewModel,
                 onNavigateToEditPizza = {
@@ -75,18 +86,21 @@ fun AppNavigation(
             )
         }
         composable<EditPizza> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             EditPizzaScreen(
                 viewModel = storeViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
         composable<EditOtherProduct> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             EditOtherProductScreen(
                 viewModel = storeViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
         composable<Branches> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             BranchScreen(
                 viewModel = storeViewModel,
                 onNavigateToEdit = {
@@ -96,10 +110,27 @@ fun AppNavigation(
             )
         }
         composable<EditBranch> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             EditBranchScreen(
                 viewModel = storeViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
     }
+}
+
+@Composable
+fun LockScreenOrientation(orientation: Int) {
+    val context = LocalContext.current
+    DisposableEffect(orientation) {
+        val activity = context.findActivity() ?: return@DisposableEffect onDispose {}
+        activity.requestedOrientation = orientation
+        onDispose { }
+    }
+}
+
+private fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -93,7 +93,12 @@ android {
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = signingConfigs.getByName("release")
         }
         getByName("debug") {
@@ -111,9 +116,10 @@ android {
     }
 
     applicationVariants.all {
+        val variant = this
         outputs.all {
             val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            output.outputFileName = "pizzeria.apk"
+            output.outputFileName = "pizzeriaStore-${variant.name}.apk"
         }
     }
 }

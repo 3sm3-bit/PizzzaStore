@@ -12,6 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.valu.uitaycompose.extra.UiTayCToolBar
+import com.valu.uitaycompose.model.UiToolBarModel
+import com.valu.uitaycompose.utils.tay_red_50
+import com.valu.uitaycompose.utils.tay_red_600
 import com.valu.uitaycompose.utils.textB20
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,18 +28,19 @@ fun MenuOptionsScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Opciones", style = textB20) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+            Surface(color = tay_red_50) {
+                Box(modifier = Modifier.statusBarsPadding()) {
+                    UiTayCToolBar(
+                        uiTayText = "Configuracion de datos",
+                        uiTayModifier = UiToolBarModel()
+                            .backgroundColor(tay_red_50)
+                            .textColor(tay_red_600)
+                            .iconColor(tay_red_600)
+                    ) { _ ->
+                        onBack.invoke()
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF1C1E21)
-                )
-            )
+                }
+            }
         },
         containerColor = Color(0xFFF0F2F5)
     ) { padding ->

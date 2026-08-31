@@ -4,8 +4,9 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -30,6 +31,17 @@ import com.valu.uitaycompose.utils.*
 fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
     val uiState = viewModel.orderUiState
     var showSheet by remember { mutableStateOf(false) }
+    
+    // Lógica Adaptativa
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    
+    val columns = when {
+        screenWidth < 600 -> 1 // Celular
+        isLandscape -> 4       // Tablet Horizontal
+        else -> 2              // Tablet Vertical
+    }
 
     LaunchedEffect(uiState.selectedOrder) {
         showSheet = uiState.selectedOrder != null
@@ -43,14 +55,14 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToMenuOptions,
-                containerColor = Color(0xFF007BFF),
+                containerColor = tay_green_600,
                 contentColor = Color.White,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(56.dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = "Ver Productos",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
         },
@@ -145,9 +157,12 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                         }
                     }
                 } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(bottom = 12.dp)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        contentPadding = PaddingValues(bottom = 80.dp),
+                        modifier = Modifier.fillMaxSize()
                     ) {
                         items(uiState.orders) { order ->
                             OrderCard(
@@ -184,7 +199,14 @@ fun OrderCard(
     onDetailClick: () -> Unit,
     onStateChange: (String) -> Unit
 ) {
-    val statusColor = if (order.state.trim().uppercase() == "CONFIRMADO") Color(0xFF3B82F6) else Color(0xFF10B981)
+    val statusColor = when (order.state.trim().uppercase()) {
+        "CONFIRMADO" -> Color(0xFF3B82F6) // Azul
+        "RECEPCIONADO" -> Color(0xFF8B5CF6) // Violeta/Morado
+        "LISTO" -> Color(0xFF10B981)      // Verde
+        "ENVIADO" -> Color(0xFFF59E0B)    // Ámbar/Naranja
+        "ENTREGADO" -> Color(0xFF8A8D91)  // Gris
+        else -> Color(0xFF10B981)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -340,7 +362,14 @@ fun OrderCard(
                         )
                     }
                     
-                    if (order.state.trim().uppercase() != "LISTO") {
+                    val actionButtonText = when (order.state.trim().uppercase()) {
+                        "CONFIRMADO" -> "IMPRIMIR"
+                        "RECEPCIONADO" -> "LISTO"
+                        "LISTO" -> if (order.reception.trim().uppercase().contains("DELIVERY")) "ENVIADO" else "ENTREGADO"
+                        else -> null
+                    }
+
+                    if (actionButtonText != null) {
                         Button(
                             onClick = { onStateChange("AVANZAR") },
                             modifier = Modifier.weight(1f).height(32.dp),
@@ -351,7 +380,7 @@ fun OrderCard(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "AVANZAR",
+                                text = actionButtonText,
                                 fontSize = 12.sp,
                                 style = textB12,
                                 color = Color.White

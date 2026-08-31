@@ -23,6 +23,22 @@ import com.valu.uitaycompose.utils.textB20
 import com.valu.uitaycompose.utils.permission.rememberUiTayCameraManager
 import com.valu.uitaycompose.utils.permission.UiTayCameraManagerCompose
 import android.graphics.Bitmap
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.input.ImeAction
+import com.valu.uitaycompose.button.UiTayButton
+import com.valu.uitaycompose.extra.UiTayCToolBar
+import com.valu.uitaycompose.label.UiTayEditLayout
+import com.valu.uitaycompose.model.UiEditLayoutModel
+import com.valu.uitaycompose.model.UiTayButtonModel
+import com.valu.uitaycompose.model.UiToolBarModel
+import com.valu.uitaycompose.swipe.UiTayUrlImage
+import com.valu.uitaycompose.utils.tay_green_600
+import com.valu.uitaycompose.utils.tay_red_50
+import com.valu.uitaycompose.utils.tay_red_600
+import com.valu.uitaycompose.utils.textB12
+import com.valu.uitaycompose.utils.textM10
+import com.valu.uitaycompose.utils.textM14
 import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +57,12 @@ fun EditOtherProductScreen(
     var stateAvailable by remember { mutableStateOf(product.state) }
     var urlImg by remember { mutableStateOf(product.urlImg) }
     var productBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+    var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var showUrlImage by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        showUrlImage = true
+    }
 
     val cameraManager = rememberUiTayCameraManager(
         uiTayNameFilePath = "product",
@@ -52,69 +74,50 @@ fun EditOtherProductScreen(
             override fun onGetImageCameraCompleted(path: String, img: Bitmap) {
                 productBitmap = img.asImageBitmap()
                 
-                // Subir imagen al servidor
+                // Guardar los bytes localmente en lugar de subir inmediatamente
                 val stream = ByteArrayOutputStream()
                 img.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                val byteArray = stream.toByteArray()
-                
-                viewModel.uploadProductImage(byteArray) { newUrl ->
-                    urlImg = newUrl
-                }
+                selectedImageBytes = stream.toByteArray()
+                println("EditOtherProductScreen: Imagen capturada y guardada en memoria")
             }
         }
     )
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Editar Producto", style = textB20) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+            Surface(color = tay_red_50) {
+                Box(modifier = Modifier.statusBarsPadding()) {
+                    UiTayCToolBar(
+                        uiTayText = "Editar Producto",
+                        uiTayModifier = UiToolBarModel()
+                            .backgroundColor(tay_red_50)
+                            .textColor(tay_red_600)
+                            .iconColor(tay_red_600)
+                    ) { _ ->
+                        onBack.invoke()
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        val updatedProduct = product.copy(
-                            nameProduct = name,
-                            price = price,
-                            description = description,
-                            currency = currency,
-                            currencySymbol = currencySymbol,
-                            state = stateAvailable,
-                            urlImg = urlImg
-                        )
-                        viewModel.updateProduct(updatedProduct) {
-                            onBack()
-                        }
-                    }) {
-                        Icon(Icons.Default.Save, contentDescription = "Guardar")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF1C1E21)
-                )
-            )
+                }
+            }
         },
-        containerColor = Color(0xFFF0F2F5)
+        containerColor = Color.White
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
+                .background(Color.White)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Sección de Imagen
             Row(
-                modifier = Modifier.fillMaxWidth().height(150.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Card(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    modifier = Modifier.weight(1f).height(150.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
@@ -126,8 +129,11 @@ fun EditOtherProductScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                        } else if (urlImg.isNotBlank()) {
-                            Text("Imagen cargada", style = MaterialTheme.typography.bodySmall)
+                        } else if (urlImg.isNotBlank() && showUrlImage) {
+                            UiTayUrlImage(
+                                url = urlImg,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Save, // Placeholder
@@ -139,21 +145,57 @@ fun EditOtherProductScreen(
                     }
                 }
                 
-                Button(
-                    onClick = { cameraManager.doCamera("product_img") },
-                    modifier = Modifier.weight(1f).height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                    shape = RoundedCornerShape(8.dp)
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Cambiar Imagen")
+                    Button(
+                        onClick = { cameraManager.doCamera("product_img") },
+                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Cambiar Imagen")
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("DISPONIBLE", style = textB12,
+                                color = tay_green_600)
+                        }
+                        Switch(
+                            checked = stateAvailable,
+                            onCheckedChange = { stateAvailable = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = tay_green_600,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color(0xFFDDDFE2),
+                                uncheckedBorderColor = Color.Transparent
+                            ),
+                            modifier = Modifier.scale(0.7f)
+                        )
+                    }
                 }
             }
 
-            OutlinedTextField(
+            UiTayEditLayout(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nombre del Producto") },
-                modifier = Modifier.fillMaxWidth()
+                hint = "Nombre del Producto",
+                imeAction = ImeAction.Done,
+                model = UiEditLayoutModel(
+                    uiStrokeActiveColor = tay_red_600,
+                    uiTextColor = tay_red_600,
+                    uiTextActiveColor = tay_red_600,
+                    uiTitleActiveColor = tay_red_600,
+                    uiTextFont = textM14,
+                    uiTitleFont = textM14
+                )
             )
 
             OutlinedTextField(
@@ -164,66 +206,79 @@ fun EditOtherProductScreen(
                 minLines = 3
             )
 
-            OutlinedTextField(
+            UiTayEditLayout(
                 value = price,
                 onValueChange = { price = it },
-                label = { Text("Precio") },
-                modifier = Modifier.fillMaxWidth()
+                hint = "Precio",
+                imeAction = ImeAction.Done,
+                model = UiEditLayoutModel(
+                    uiStrokeActiveColor = tay_red_600,
+                    uiTextColor = tay_red_600,
+                    uiTextActiveColor = tay_red_600,
+                    uiTitleActiveColor = tay_red_600,
+                    uiTextFont = textM14,
+                    uiTitleFont = textM14
+                )
             )
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
+                UiTayEditLayout(
+                    modifier = Modifier.weight(1f),
                     value = currency,
                     onValueChange = { currency = it },
-                    label = { Text("Moneda") },
-                    modifier = Modifier.weight(1f)
+                    hint = "Moneda",
+                    imeAction = ImeAction.Done,
+                    model = UiEditLayoutModel(
+                        uiStrokeActiveColor = tay_red_600,
+                        uiTextColor = tay_red_600,
+                        uiTextActiveColor = tay_red_600,
+                        uiTitleActiveColor = tay_red_600,
+                        uiTextFont = textM14,
+                        uiTitleFont = textM14
+                    )
                 )
-                OutlinedTextField(
+                UiTayEditLayout(
+                    modifier = Modifier.weight(1f),
                     value = currencySymbol,
                     onValueChange = { currencySymbol = it },
-                    label = { Text("Símbolo") },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = if (stateAvailable) "Estado: DISPONIBLE" else "Estado: NO DISPONIBLE",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Switch(
-                    checked = stateAvailable,
-                    onCheckedChange = { stateAvailable = it }
+                    hint = "Símbolo",
+                    imeAction = ImeAction.Done,
+                    model = UiEditLayoutModel(
+                        uiStrokeActiveColor = tay_red_600,
+                        uiTextColor = tay_red_600,
+                        uiTextActiveColor = tay_red_600,
+                        uiTitleActiveColor = tay_red_600,
+                        uiTextFont = textM14,
+                        uiTitleFont = textM14
+                    )
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = {
+            UiTayButton(
+                uiTayText = "Guardar Cambios",
+                uiTayClick = {
                     val updatedProduct = product.copy(
                         nameProduct = name,
                         price = price,
                         description = description,
                         currency = currency,
                         currencySymbol = currencySymbol,
-                        state = stateAvailable
+                        state = stateAvailable,
+                        urlImg = urlImg
                     )
-                    viewModel.updateProduct(updatedProduct) {
+                    viewModel.updateProduct(updatedProduct, selectedImageBytes) {
                         onBack()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
-            ) {
-                Icon(Icons.Default.Save, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Guardar Cambios")
-            }
+                uiTayBtnModifier = UiTayButtonModel(
+                    uTBgColor = tay_red_600,
+                    uTStrokeColor = tay_red_600,
+                    uTBgSelectedColor = tay_red_600,
+                    uTStrokeSelectedColor = tay_red_600,
+                )
+            )
         }
     }
 }

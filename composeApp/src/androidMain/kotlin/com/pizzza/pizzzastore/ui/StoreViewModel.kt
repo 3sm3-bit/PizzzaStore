@@ -55,10 +55,20 @@ class StoreViewModel(
         }
     }
 
-    fun updateProduct(product: ProductModel, onSuccess: () -> Unit) {
+    fun updateProduct(product: ProductModel, imageBytes: ByteArray? = null, onSuccess: () -> Unit) {
         execute {
             try {
-                dataUseCase.updateProduct(product)
+                var productToUpdate = product
+                
+                // Si hay una nueva imagen, primero la subimos
+                if (imageBytes != null) {
+                    println("StoreViewModel: Subiendo nueva imagen antes de actualizar producto...")
+                    val newUrl = dataUseCase.uploadProductImage(imageBytes)
+                    productToUpdate = product.copy(urlImg = newUrl)
+                    println("StoreViewModel: Imagen subida con éxito. Nueva URL: $newUrl")
+                }
+
+                dataUseCase.updateProduct(productToUpdate)
                 getProductsList()
                 withContext(dispatchers.main) {
                     onSuccess()

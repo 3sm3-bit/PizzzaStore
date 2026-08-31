@@ -35,7 +35,7 @@ class KmmService(private val client: HttpClient) {
 
     suspend fun uploadProductImage(image: ByteArray): UploadImageResponse {
         return client.submitFormWithBinaryData(
-            url = "${BASE_URL}/upload-image",
+            url = "${BASE_URL}/pizzzeria/products/upload-image",
             formData = formData {
                 append("image", image, Headers.build {
                     append(HttpHeaders.ContentType, "image/jpeg")
@@ -76,7 +76,7 @@ class KmmService(private val client: HttpClient) {
     }
 
     suspend fun updateParentOrder(request: ParentOrderResponse): String {
-        return client.put("${BASE_URL}/pizzzeria/order/generalOrder/${request.uid}") {
+        return client.put("${BASE_URL}/pizzzeria/order/generalOrder") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()

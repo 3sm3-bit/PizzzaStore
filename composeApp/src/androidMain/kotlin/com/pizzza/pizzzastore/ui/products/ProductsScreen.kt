@@ -18,6 +18,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.ui.StoreViewModel
+import com.valu.uitaycompose.extra.UiTayCToolBar
+import com.valu.uitaycompose.model.UiToolBarModel
+import com.valu.uitaycompose.swipe.UiTayUrlImage
 import com.valu.uitaycompose.utils.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,18 +39,19 @@ fun ProductScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Nuestros Productos", style = textB20) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+            Surface(color = tay_red_50) {
+                Box(modifier = Modifier.statusBarsPadding()) {
+                    UiTayCToolBar(
+                        uiTayText = "listado de pizzas",
+                        uiTayModifier = UiToolBarModel()
+                            .backgroundColor(tay_red_50)
+                            .textColor(tay_red_600)
+                            .iconColor(tay_red_600)
+                    ) { _ ->
+                        onBack.invoke()
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF1C1E21)
-                )
-            )
+                }
+            }
         },
         containerColor = Color(0xFFF0F2F5)
     ) { padding ->
@@ -77,14 +81,17 @@ fun ProductScreen(
                             // Mitad izquierda: Imagen
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(1.2f)
                                     .fillMaxHeight()
                                     .background(Color(0xFFE9ECEF)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (product.urlImg.isNotBlank()) {
-                                    // Placeholder de imagen (Aquí se cargaría con Coil/Kamel)
-                                    Text("📸", fontSize = 32.sp)
+                                    Text(
+                                        text = "con imagen",
+                                        style = textB10,
+                                        color = Color(0xFF10B981)
+                                    )
                                 } else {
                                     Icon(
                                         imageVector = Icons.Default.ShoppingCart,
@@ -98,7 +105,7 @@ fun ProductScreen(
                             // Mitad derecha: Información
                             Column(
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .weight(2f)
                                     .padding(12.dp)
                                     .fillMaxHeight(),
                                 verticalArrangement = Arrangement.SpaceBetween

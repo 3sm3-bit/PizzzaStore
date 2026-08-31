@@ -18,6 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.model.BranchModel
 import com.pizzza.pizzzastore.ui.StoreViewModel
+import com.valu.uitaycompose.extra.UiTayCToolBar
+import com.valu.uitaycompose.model.UiToolBarModel
+import com.valu.uitaycompose.utils.tay_red_50
+import com.valu.uitaycompose.utils.tay_red_600
 import com.valu.uitaycompose.utils.textB16
 import com.valu.uitaycompose.utils.textB20
 import com.valu.uitaycompose.utils.textS12
@@ -38,18 +42,19 @@ fun BranchScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Nuestras Sucursales", style = textB20) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+            Surface(color = tay_red_50) {
+                Box(modifier = Modifier.statusBarsPadding()) {
+                    UiTayCToolBar(
+                        uiTayText = "Nuestras Sucursales",
+                        uiTayModifier = UiToolBarModel()
+                            .backgroundColor(tay_red_50)
+                            .textColor(tay_red_600)
+                            .iconColor(tay_red_600)
+                    ) { _ ->
+                        onBack.invoke()
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color(0xFF1C1E21)
-                )
-            )
+                }
+            }
         },
         containerColor = Color(0xFFF0F2F5)
     ) { padding ->

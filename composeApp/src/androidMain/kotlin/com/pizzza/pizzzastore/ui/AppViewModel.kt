@@ -51,8 +51,9 @@ class AppViewModel(
         val sortedOrders = orders.sortedBy {
             when (it.state.trim().uppercase()) {
                 "CONFIRMADO" -> 1
-                "LISTO" -> 2
-                else -> 3
+                "RECEPCIONADO" -> 2
+                "LISTO" -> 3
+                else -> 4
             }
         }
 
@@ -61,7 +62,7 @@ class AppViewModel(
 
         orderUiState = orderUiState.copy(
             orders = sortedOrders,
-            filteredOrders = sortedOrders, // Mostramos todos por defecto ya que no hay filtros
+            filteredOrders = sortedOrders, // Mostramos todos por defecto
             countConfirmado = countConfirmado,
             countListo = countListo
         )
@@ -109,12 +110,18 @@ class AppViewModel(
 
     fun avanzarEstado(order: ParentOrderModel) {
         val currentState = order.state.trim().uppercase()
+        val isDelivery = order.reception.trim().uppercase().contains("DELIVERY")
+        
         val nextState = when (currentState) {
-            "CONFIRMADO" -> "LISTO"
-            "LISTO" -> "ENTREGADO" // O el estado final que manejes
-            else -> "CONFIRMADO"
+            "CONFIRMADO" -> "RECEPCIONADO"
+            "RECEPCIONADO" -> "LISTO"
+            "LISTO" -> if (isDelivery) "ENVIADO" else "ENTREGADO"
+            else -> null
         }
-        updateOrderState(order, nextState)
+        
+        nextState?.let {
+            updateOrderState(order, it)
+        }
     }
 
     fun syncProducts(onComplete: (Boolean) -> Unit = {}) {
