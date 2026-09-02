@@ -3,7 +3,7 @@ package com.pizzza.pizzzastore.ui
 import android.util.Log
 import com.pizzza.pizzzastore.model.ParentOrderModel
 import com.pizzza.pizzzastore.usecases.DataUseCase
-import com.pizzza.pizzzastore.utils.DispatcherProvider
+import com.pizzza.pizzzastore.DispatcherProvider
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -61,8 +61,16 @@ class AppViewModelTest {
     fun `obtener lista de pedidos actualiza el estado correctamente`() = runTest {
         // PREPARACIÓN
         val mockOrders = listOf(
-            ParentOrderModel(uid = "1", nameClient = "Tayler", state = "CONFIRMADO", orders = emptyList(), description = "", phone = "", price = "100", date = "", address = "", reception = ""),
-            ParentOrderModel(uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), description = "", phone = "", price = "200", date = "", address = "", reception = "")
+            ParentOrderModel(
+                uid = "1", nameClient = "Tayler", state = "CONFIRMADO", orders = emptyList(), 
+                description = "", phone = "", price = "100", date = "", address = "", reception = "",
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+            ),
+            ParentOrderModel(
+                uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), 
+                description = "", phone = "", price = "200", date = "", address = "", reception = "",
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+            )
         )
         coEvery { dataUseCase.loadParentOrder(any()) } returns mockOrders
 
@@ -73,16 +81,24 @@ class AppViewModelTest {
         // VERIFICACIÓN
         val uiState = viewModel.orderUiState
         assertEquals(2, uiState.orders.size)
-        assertEquals(1, uiState.countConfirmado)
-        assertEquals(1, uiState.countListo)
+        assertEquals(2, uiState.countPendientes)
+        assertEquals(0, uiState.countEntregado)
     }
 
     @Test
     fun `aplicar filtro actualiza la lista filtrada`() = runTest {
         // PREPARACIÓN
         val mockOrders = listOf(
-            ParentOrderModel(uid = "1", nameClient = "Tayler", state = "CONFIRMADO", orders = emptyList(), description = "", phone = "", price = "100", date = "", address = "", reception = ""),
-            ParentOrderModel(uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), description = "", phone = "", price = "200", date = "", address = "", reception = "")
+            ParentOrderModel(
+                uid = "1", nameClient = "Tayler", state = "CONFIRMADO", orders = emptyList(), 
+                description = "", phone = "", price = "100", date = "", address = "", reception = "",
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+            ),
+            ParentOrderModel(
+                uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), 
+                description = "", phone = "", price = "200", date = "", address = "", reception = "",
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+            )
         )
         coEvery { dataUseCase.loadParentOrder(any()) } returns mockOrders
         
