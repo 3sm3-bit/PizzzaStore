@@ -26,6 +26,8 @@ interface IDataNetwork {
 
     suspend fun updateBranch(data: BranchModel): String
 
+    suspend fun getUsers(): List<UserResponse>
+
     suspend fun registerUser(data: UserResponse): String
 
     suspend fun login(data: com.pizzza.pizzzastore.repository.network.model.LoginRequest): com.pizzza.pizzzastore.repository.network.model.LoginResponse

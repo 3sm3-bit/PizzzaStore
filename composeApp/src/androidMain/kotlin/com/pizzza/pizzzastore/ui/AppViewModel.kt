@@ -57,14 +57,14 @@ class AppViewModel(
             }
         }
 
-        val countConfirmado = orders.count { it.state.trim().uppercase() == "CONFIRMADO" }
-        val countListo = orders.count { it.state.trim().uppercase() == "LISTO" }
+        val countEntregado = orders.count { it.state.trim().uppercase() == "ENTREGADO" }
+        val countPendientes = orders.size - countEntregado
 
         orderUiState = orderUiState.copy(
             orders = sortedOrders,
             filteredOrders = sortedOrders, // Mostramos todos por defecto
-            countConfirmado = countConfirmado,
-            countListo = countListo
+            countPendientes = countPendientes,
+            countEntregado = countEntregado
         )
     }
 

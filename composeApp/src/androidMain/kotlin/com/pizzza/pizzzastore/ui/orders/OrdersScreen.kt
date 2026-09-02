@@ -115,14 +115,14 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     StatusIndicator(
-                        text = "CONFIRMADO",
-                        count = uiState.countConfirmado,
+                        text = "PENDIENTES",
+                        count = uiState.countPendientes,
                         color = Color(0xFF3B82F6),
                         modifier = Modifier.weight(1f)
                     )
                     StatusIndicator(
-                        text = "LISTO",
-                        count = uiState.countListo,
+                        text = "ENTREGADO",
+                        count = uiState.countEntregado,
                         color = Color(0xFF10B981),
                         modifier = Modifier.weight(1f)
                     )

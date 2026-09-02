@@ -1,7 +1,12 @@
 package com.pizzza.pizzzastore.component
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import android.app.Activity
 import android.content.Context
@@ -20,6 +25,7 @@ import com.pizzza.pizzzastore.ui.menu.MenuOptionsScreen
 import com.pizzza.pizzzastore.ui.branches.BranchScreen
 import com.pizzza.pizzzastore.ui.branches.EditBranchScreen
 import com.pizzza.pizzzastore.ui.menu.ConfigNotiScreen
+import com.pizzza.pizzzastore.ui.menu.ListUserScreen
 import com.pizzza.pizzzastore.ui.splash.SplashScreen
 
 @Composable
@@ -61,6 +67,10 @@ fun AppNavigation(
                     storeViewModel.getBranchesList()
                     navController.navigate(ConfigNoti)
                 },
+                onNavigateToListUser = {
+                    storeViewModel.getUsersList()
+                    navController.navigate(ListUser)
+                },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -71,6 +81,19 @@ fun AppNavigation(
                 storeViewModel = storeViewModel,
                 onBack = { navController.popBackStack() }
             )
+        }
+        composable<ListUser> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+            ListUserScreen(
+                viewModel = storeViewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable<Register> {
+            // Placeholder for Register Screen
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Pantalla de Registro (En construcción)")
+            }
         }
         composable<Products> {
             LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)

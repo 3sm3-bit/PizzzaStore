@@ -8,8 +8,8 @@ data class OrderUiState(
     val orders: List<ParentOrderModel> = emptyList(),
     val filteredOrders: List<ParentOrderModel> = emptyList(),
     val selectedFilter: String = "TODOS",
-    val countConfirmado: Int = 0,
-    val countListo: Int = 0,
+    val countPendientes: Int = 0,
+    val countEntregado: Int = 0,
     val selectedOrder: ParentOrderModel? = null,
     val products: List<ProductModel> = emptyList(),
     val selectedProduct: ProductModel? = null,
@@ -19,5 +19,8 @@ data class OrderUiState(
     val selectedCategory: String = "Pizza",
     val pizzaProducts: List<ProductModel> = emptyList(),
     val extraProducts: List<ProductModel> = emptyList(),
-    val deliveryProducts: List<ProductModel> = emptyList()
+    val deliveryProducts: List<ProductModel> = emptyList(),
+    val users: List<com.pizzza.pizzzastore.repository.network.model.UserResponse> = emptyList(),
+    val filteredUsers: List<com.pizzza.pizzzastore.repository.network.model.UserResponse> = emptyList(),
+    val userFilter: String = "CLIENTE"
 )

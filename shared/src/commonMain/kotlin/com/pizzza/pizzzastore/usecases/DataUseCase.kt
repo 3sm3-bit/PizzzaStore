@@ -27,6 +27,8 @@ class DataUseCase(private val iDataNetwork: IDataNetwork) {
 
     suspend fun updateBranch(data: BranchModel) = iDataNetwork.updateBranch(data)
 
+    suspend fun getUsers() = iDataNetwork.getUsers()
+
     suspend fun registerUser(data: UserResponse) = iDataNetwork.registerUser(data)
 
     suspend fun login(data: com.pizzza.pizzzastore.repository.network.model.LoginRequest) = iDataNetwork.login(data)

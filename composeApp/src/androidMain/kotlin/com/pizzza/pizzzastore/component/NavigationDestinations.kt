@@ -45,6 +45,9 @@ object ConfigNoti
 object EditBranch
 
 @Serializable
+object ListUser
+
+@Serializable
 object CartDetail
 
 @Serializable

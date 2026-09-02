@@ -138,6 +138,12 @@ class DataNetwork(
         }
     }
 
+    override suspend fun getUsers(): List<UserResponse> = apiCall({
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Cargando lista de usuarios...")
+        apiService.getUsers()
+    }) { it }
+
     override suspend fun registerUser(data: UserResponse): String = apiCall {
         if (!connectivityManager.isConnected()) throw ErrorNetwork()
         println("DataNetwork: Registrando usuario ${data.email}...")

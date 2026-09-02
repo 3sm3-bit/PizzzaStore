@@ -82,6 +82,10 @@ class KmmService(private val client: HttpClient) {
         }.body()
     }
 
+    suspend fun getUsers(): List<UserResponse> {
+        return client.get("${BASE_URL}/services/user").body()
+    }
+
     suspend fun registerUser(request: UserResponse): String {
         println("KmmService: Enviando registro para ${request.email}...")
         val response = client.post("${BASE_URL}/services/user") {

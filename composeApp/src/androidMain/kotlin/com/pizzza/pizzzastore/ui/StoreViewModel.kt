@@ -113,6 +113,38 @@ class StoreViewModel(
         storeUiState = storeUiState.copy(selectedBranch = branch)
     }
 
+    fun getUsersList() {
+        execute(loading = true) {
+            try {
+                val response = dataUseCase.getUsers()
+                withContext(dispatchers.main) {
+                    storeUiState = storeUiState.copy(
+                        users = response,
+                        filteredUsers = filterUsers(response, storeUiState.userFilter)
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("StoreViewModel", "Error al obtener usuarios: ${e.message}", e)
+                throw e
+            }
+        }
+    }
+
+    fun setUserFilter(filter: String) {
+        storeUiState = storeUiState.copy(
+            userFilter = filter,
+            filteredUsers = filterUsers(storeUiState.users, filter)
+        )
+    }
+
+    private fun filterUsers(users: List<com.pizzza.pizzzastore.repository.network.model.UserResponse>, filter: String): List<com.pizzza.pizzzastore.repository.network.model.UserResponse> {
+        return if (filter == "CLIENTE") {
+            users.filter { it.rol == "CLIENTE" }
+        } else {
+            users.filter { it.rol != "CLIENTE" }
+        }
+    }
+
     fun selectProduct(product: ProductModel?) {
         storeUiState = storeUiState.copy(selectedProduct = product)
     }
