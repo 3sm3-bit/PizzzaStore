@@ -19,8 +19,8 @@ buildConfig {
     val isDebug = isAndroidDebug || isIosDebug || project.hasProperty("debug")
     
     buildConfigField("Boolean", "IS_DEBUG", isDebug.toString())
-    buildConfigField("String", "BASE_URL_SERVICE", "\"https://undefined-facility-salute.ngrok-free.dev\"")
-    buildConfigField("String", "BASE_URL_SERVICE_DEV", "\"https://undefined-facility-salute.ngrok-free.dev\"")
+    buildConfigField("String", "BASE_URL_SERVICE", "\"https://app.lapizzzeria.lol\"")
+    buildConfigField("String", "BASE_URL_SERVICE_DEV", "\"https://app.lapizzzeria.lol\"")
 }
 
 kotlin {
