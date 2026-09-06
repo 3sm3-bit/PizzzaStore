@@ -7,13 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.dantsu.escposprinter.EscPosPrinter
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnections
-import com.dantsu.escposprinter.exceptions.EscPosBarcodeException
-import com.dantsu.escposprinter.exceptions.EscPosConnectionException
-import com.dantsu.escposprinter.exceptions.EscPosEncodingException
-import com.dantsu.escposprinter.exceptions.EscPosParserException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -40,11 +35,14 @@ class BluetoothPrinterManager(private val context: Context) {
                 } ?: bluetoothDevicesList.first()
 
                 selectedDevice = connection.device
+                Log.d(TAG, "Impresora detectada: ${selectedDevice?.name}")
                 _isConnected.value = true
             } else {
+                Log.d(TAG, "No se encontraron dispositivos Bluetooth vinculados")
                 _isConnected.value = false
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error en auto-detección: ${e.message}")
             _isConnected.value = false
         }
     }
@@ -58,12 +56,20 @@ class BluetoothPrinterManager(private val context: Context) {
 
         selectedDevice?.let { device ->
             try {
-                // Formato estándar de ticket (80mm o 58mm dinámico)
-                val printer = EscPosPrinter(BluetoothConnection(device), 203, 72f, 48)
-                printer.printFormattedText(content)
-                printer.disconnectPrinter()
+                val connection = BluetoothConnection(device)
+                connection.connect()
+                
+                // Envío directo de comandos TSPL (GBK es el estándar de estas impresoras)
+                val bytes = content.toByteArray(charset("GBK"))
+                connection.write(bytes)
+                connection.send()
+                
+                Thread.sleep(500)
+                connection.disconnect()
+                
+                Log.d(TAG, "Etiqueta TSPL enviada correctamente")
             } catch (e: Exception) {
-                Log.e(TAG, "Error al imprimir: ${e.message}")
+                Log.e(TAG, "Error en envío TSPL: ${e.message}")
             }
         }
     }
