@@ -46,37 +46,50 @@ class WebSocketManager(private val client: HttpClient) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var session: WebSocketSession? = null
-    
+    private var connectionJob: kotlinx.coroutines.Job? = null
+
     private val _notifications = MutableSharedFlow<WebSocketNotification>()
     val notifications = _notifications.asSharedFlow()
+
+    private val _isConnected = MutableSharedFlow<Boolean>(replay = 1)
+    val isConnected = _isConnected.asSharedFlow()
 
     private val json = Json { 
         ignoreUnknownKeys = true 
         encodeDefaults = true // FORZAR a enviar "type": "IDENTIFY"
     }
 
+    private var currentBranchId: String? = null
+
     fun connect(branchId: String) {
-        scope.launch {
+        currentBranchId = branchId
+        connectionJob?.cancel()
+        connectionJob = scope.launch {
+            var attempt = 0
             while (true) {
                 try {
+                    _isConnected.emit(false)
                     // La URL base ya contiene /pizzzeria, el servidor WS suele estar en la raíz del host
                     val baseUrl = BuildConfig.BASE_URL_SERVICE
                     val wsUrl = if (baseUrl.contains("ngrok")) {
-                        // Para ngrok, conectamos a la raíz wss://...
                         baseUrl.substringBefore("/pizzzeria").replace("https://", "wss://").replace("http://", "ws://")
                     } else {
                         baseUrl.replace("https://", "wss://").replace("http://", "ws://")
                     }
                     
-                    println("🍕 WS - Intentando conectar a: $wsUrl")
+                    println("🍕 WS - Intentando conectar a: $wsUrl (Intento $attempt)")
                     
-                    // Usar un cliente interno limpio para evitar el error NoTransformationFoundException
                     val wsClient = HttpClient {
-                        install(io.ktor.client.plugins.websocket.WebSockets)
+                        install(io.ktor.client.plugins.websocket.WebSockets) {
+                            pingIntervalMillis = 30_000 // Enviar Ping cada 30 segundos
+                        }
                     }
 
                     wsClient.webSocket(urlString = wsUrl) {
+                        session = this
                         println("🍕 WS - ¡CONECTADO EXITOSAMENTE!")
+                        _isConnected.emit(true)
+                        attempt = 0 // Resetear intentos al conectar
                         
                         // Enviar identificación
                         val identify = IdentifyMessage(branchId = branchId)
@@ -102,14 +115,23 @@ class WebSocketManager(private val client: HttpClient) {
                     wsClient.close()
                 } catch (e: Exception) {
                     println("🍕 WS - ERROR: ${e.message}")
-                    delay(5000)
                 }
-                println("🍕 WS - Reintentando conexión en 5s...")
+                
+                _isConnected.emit(false)
+                attempt++
+                val delayTime = (2000L * attempt).coerceAtMost(30000L) // Backoff Exponencial simple (2s, 4s, 6s... hasta 30s)
+                println("🍕 WS - Reintentando conexión en ${delayTime/1000}s...")
+                delay(delayTime)
             }
         }
     }
 
+    fun reconnect() {
+        currentBranchId?.let { connect(it) }
+    }
+
     fun close() {
+        connectionJob?.cancel()
         scope.launch {
             session?.close()
         }

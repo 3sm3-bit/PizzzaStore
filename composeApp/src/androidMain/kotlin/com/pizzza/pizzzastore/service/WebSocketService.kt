@@ -7,6 +7,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -27,6 +31,14 @@ class WebSocketService : Service() {
     
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var audioQueueManager: AudioQueueManager
+    private var connectivityManager: ConnectivityManager? = null
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            println("🍕 WebSocketService - RED DISPONIBLE: Forzando reconexión")
+            webSocketManager.reconnect()
+        }
+    }
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -37,6 +49,7 @@ class WebSocketService : Service() {
         super.onCreate()
         notificationHelper = NotificationHelper(this)
         audioQueueManager = AudioQueueManager(this)
+        setupNetworkListener()
         createServiceNotificationChannel()
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -54,6 +67,14 @@ class WebSocketService : Service() {
         }
         
         setupWebSocket()
+    }
+
+    private fun setupNetworkListener() {
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        connectivityManager?.registerNetworkCallback(request, networkCallback)
     }
 
     private fun createServiceNotificationChannel() {
@@ -112,6 +133,7 @@ class WebSocketService : Service() {
 
     override fun onDestroy() {
         println("🍕 WebSocketService - Servicio detenido por el usuario")
+        connectivityManager?.unregisterNetworkCallback(networkCallback)
         webSocketManager.close()
         audioQueueManager.release()
         super.onDestroy()

@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ fun MenuOptionsScreen(
     onNavigateToBranches: () -> Unit,
     onNavigateToConfigNoti: () -> Unit,
     onNavigateToListUser: () -> Unit,
+    onReconnectPrinter: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -98,6 +100,18 @@ fun MenuOptionsScreen(
                 Icon(Icons.Default.Person, contentDescription = null)
                 Spacer(Modifier.width(12.dp))
                 Text("Crear usuario")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = onReconnectPrinter,
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF673AB7))
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null)
+                Spacer(Modifier.width(12.dp))
+                Text("Re-vincular Impresora")
             }
         }
     }

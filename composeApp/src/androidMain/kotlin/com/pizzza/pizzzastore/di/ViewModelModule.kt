@@ -7,7 +7,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { AppViewModel(get(), get()) }
+    viewModel { AppViewModel(get(), get(), get(), get()) }
     viewModel { StoreViewModel(get(), get()) }
     viewModel { BaseViewModel(get()) }
 }

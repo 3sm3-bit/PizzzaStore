@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -22,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.pizzza.pizzzastore.model.ParentOrderModel
 import com.pizzza.pizzzastore.ui.AppViewModel
 import com.valu.uitaycompose.utils.*
@@ -31,6 +34,8 @@ import com.valu.uitaycompose.utils.*
 fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
     val uiState = viewModel.orderUiState
     var showSheet by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
     // Lógica Adaptativa
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
@@ -52,6 +57,7 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToMenuOptions,
@@ -90,6 +96,22 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Icono de Socket (En Línea)
+                        Icon(
+                            imageVector = Icons.Default.Wifi,
+                            contentDescription = "Estado Conexión",
+                            modifier = Modifier.size(24.dp),
+                            tint = if (uiState.isSocketConnected) Color(0xFF10B981) else Color(0xFFF44336)
+                        )
+
+                        // Icono de Impresora Inteligente
+                        Icon(
+                            imageVector = Icons.Default.Print,
+                            contentDescription = "Estado Impresora",
+                            modifier = Modifier.size(24.dp),
+                            tint = if (uiState.isPrinterConnected) Color(0xFF10B981) else Color(0xFFF44336)
+                        )
+
                         IconButton(
                             onClick = { viewModel.refresh() },
                             modifier = Modifier
@@ -172,7 +194,13 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                                 onDetailClick = { viewModel.selectOrder(order) },
                                 onStateChange = { action ->
                                     if (action == "AVANZAR") {
-                                        viewModel.avanzarEstado(order)
+                                        if (order.state.trim().uppercase() == "CONFIRMADO" && !uiState.isPrinterConnected) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
+                                            }
+                                        } else {
+                                            viewModel.avanzarEstado(order)
+                                        }
                                     }
                                 }
                             )
@@ -184,7 +212,16 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
             if (showSheet && uiState.selectedOrder != null) {
                 OrderDetailSheet(
                     order = uiState.selectedOrder,
-                    onDismiss = { viewModel.selectOrder(null) }
+                    onDismiss = { viewModel.selectOrder(null) },
+                    onReprint = {
+                        if (uiState.isPrinterConnected) {
+                            viewModel.reprintOrder(uiState.selectedOrder)
+                        } else {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -435,7 +472,8 @@ fun StatusIndicator(
 @Composable
 fun OrderDetailSheet(
     order: ParentOrderModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onReprint: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -552,6 +590,19 @@ fun OrderDetailSheet(
                         )
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = onReprint,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF673AB7)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("REIMPRIMIR TICKET", style = textB16)
             }
         }
     }

@@ -42,6 +42,7 @@ kotlin {
 
             // Custom Library
             implementation(libs.tay.compose.library)
+            implementation(libs.thermal.printer)
         }
         commonMain.dependencies {
             implementation(compose.runtime)

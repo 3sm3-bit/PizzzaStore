@@ -2,6 +2,7 @@ package com.pizzza.pizzzastore.application
 
 import android.app.Application
 import com.pizzza.pizzzastore.di.initKoin
+import com.pizzza.pizzzastore.di.printerModule
 import com.pizzza.pizzzastore.di.viewModelModule
 import com.pizzza.pizzzastore.utils.NotificationHelper
 import org.koin.android.ext.koin.androidContext
@@ -15,7 +16,7 @@ class PizzaApplication: Application()  {
         initKoin {
             androidContext(this@PizzaApplication)
             androidLogger()
-            modules(viewModelModule)
+            modules(viewModelModule, printerModule)
         }
     }
 }

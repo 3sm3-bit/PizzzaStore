@@ -71,6 +71,9 @@ fun AppNavigation(
                     storeViewModel.getUsersList()
                     navController.navigate(ListUser)
                 },
+                onReconnectPrinter = {
+                    viewModel.reconnectPrinter()
+                },
                 onBack = { navController.popBackStack() }
             )
         }

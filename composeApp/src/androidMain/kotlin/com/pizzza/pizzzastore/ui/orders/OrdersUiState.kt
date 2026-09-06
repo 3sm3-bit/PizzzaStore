@@ -22,5 +22,7 @@ data class OrderUiState(
     val deliveryProducts: List<ProductModel> = emptyList(),
     val users: List<com.pizzza.pizzzastore.repository.network.model.UserResponse> = emptyList(),
     val filteredUsers: List<com.pizzza.pizzzastore.repository.network.model.UserResponse> = emptyList(),
-    val userFilter: String = "CLIENTE"
+    val userFilter: String = "CLIENTE",
+    val isPrinterConnected: Boolean = false,
+    val isSocketConnected: Boolean = false
 )

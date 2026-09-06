@@ -4,22 +4,48 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
 import com.pizzza.pizzzastore.DispatcherProvider
 import com.pizzza.pizzzastore.model.ParentOrderModel
 import com.pizzza.pizzzastore.model.ProductModel
 import com.pizzza.pizzzastore.model.BranchModel
+import com.pizzza.pizzzastore.printer.BluetoothPrinterManager
+import com.pizzza.pizzzastore.printer.TicketFormatter
 import com.pizzza.pizzzastore.ui.base.BaseViewModel
 import com.pizzza.pizzzastore.ui.orders.OrderUiState
 import com.pizzza.pizzzastore.usecases.DataUseCase
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppViewModel(
     private val dataUseCase: DataUseCase,
-    private val dispatchers: DispatcherProvider
+    private val dispatchers: DispatcherProvider,
+    private val printerManager: BluetoothPrinterManager,
+    private val webSocketManager: com.pizzza.pizzzastore.repository.network.WebSocketManager
 ) : BaseViewModel(dispatchers) {
 
     var orderUiState by mutableStateOf(OrderUiState())
         private set
+
+    init {
+        // Auto-detección de impresora al iniciar
+        printerManager.autoDetectAndConnect()
+        
+        // Escuchar el estado de conexión de la impresora
+        viewModelScope.launch {
+            printerManager.isConnected.collectLatest { connected ->
+                orderUiState = orderUiState.copy(isPrinterConnected = connected)
+            }
+        }
+
+        // Escuchar el estado de conexión del socket
+        viewModelScope.launch {
+            webSocketManager.isConnected.collectLatest { connected ->
+                orderUiState = orderUiState.copy(isSocketConnected = connected)
+            }
+        }
+    }
 
     fun getGeneralOrderList() {
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
@@ -120,7 +146,28 @@ class AppViewModel(
         }
         
         nextState?.let {
+            // Si el estado actual es CONFIRMADO y vamos a imprimir, validamos conexión
+            if (currentState == "CONFIRMADO") {
+                if (!orderUiState.isPrinterConnected) {
+                    // Si no hay impresora, no avanzamos y lanzamos error para que la UI lo maneje
+                    Log.e("AppViewModel", "Intento de impresión fallido: Impresora desconectada")
+                    // Podríamos setear un error específico en uiStateBase si quisiéramos
+                    return
+                }
+                printOrder(order)
+            }
             updateOrderState(order, it)
+        }
+    }
+
+    fun printOrder(order: ParentOrderModel) {
+        execute(loading = false) {
+            try {
+                val ticket = TicketFormatter.formatOrder(order)
+                printerManager.printTicket(ticket)
+            } catch (e: Exception) {
+                Log.e("AppViewModel", "Error al mandar a imprimir: ${e.message}")
+            }
         }
     }
 
@@ -239,5 +286,17 @@ class AppViewModel(
                 throw e
             }
         }
+    }
+
+    fun reconnectPrinter() {
+        printerManager.autoDetectAndConnect()
+    }
+
+    fun reprintOrder(order: ParentOrderModel) {
+        if (!orderUiState.isPrinterConnected) {
+            // Podríamos disparar un error visual aquí
+            return
+        }
+        printOrder(order)
     }
 }

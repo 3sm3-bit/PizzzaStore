@@ -35,6 +35,7 @@ kotlinx-coroutines-test = "1.10.1"
 turbine = "1.2.0"
 koin-test = "4.0.0"
 androidx-compose-ui-test = "1.7.8"
+thermal-printer = "3.3.0"
 
 [libraries]
 # Testing
@@ -101,6 +102,7 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 
 # Custom Libraries
 tay-compose-library = { module = "com.github.montes8:UITayCompose", version = "1.0.0" }
+thermal-printer = { module = "com.github.Dantsu:escpos-thermalprinter-android", version.ref = "thermal-printer" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
