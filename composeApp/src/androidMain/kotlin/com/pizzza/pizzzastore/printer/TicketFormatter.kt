@@ -7,60 +7,56 @@ import java.util.Locale
 
 object TicketFormatter {
     /**
-     * Genera comandos TSPL para una etiqueta de 100mm x 150mm (estándar de este modelo)
+     * Genera comandos TSPL para una etiqueta de 100mm x 150mm en formato ECHADO (Landscape)
      */
     fun formatOrderTSPL(order: ParentOrderModel): String {
         val sb = StringBuilder()
         val printDateTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         
-        // Comandos Iniciales TSPL
-        // Definimos un tamaño de 100mm de ancho por 150mm de largo para pedidos largos
+        // Configuración de Etiqueta
         sb.append("SIZE 100 mm, 150 mm\n") 
         sb.append("GAP 3 mm, 0 mm\n")
-        // DIRECTION 0,1 rotará el contenido para que salga en vertical
-        sb.append("DIRECTION 0,1\n") 
+        sb.append("DIRECTION 1\n") 
         sb.append("CLS\n")
         
-        // HEADER - Ajustamos coordenadas para modo vertical (X ahora es el eje corto)
-        sb.append("TEXT 400,50,\"4\",0,3,3,2,\"♥\"\n")
-        sb.append("TEXT 400,110,\"2\",0,1,1,2,\"$printDateTime\"\n")
-        sb.append("BAR 50,140,700,3\n")
+        // En modo "Echado", rotamos el texto 90 grados (el cuarto parámetro es 90)
+        // X ahora controla la posición vertical en el papel (0-800)
+        // Y ahora controla la posición horizontal (0-1200)
+        
+        // HEADER
+        sb.append("TEXT 750,50,\"3\",90,1,1,\"PIZZZA STORE\"\n")
+        sb.append("TEXT 700,50,\"2\",90,1,1,\"$printDateTime\"\n")
+        sb.append("BAR 670,50,2,1100\n") // Línea larga a lo largo de los 150mm
         
         // DATOS DEL PEDIDO
-        sb.append("TEXT 50,170,\"3\",0,1,1,\"PEDIDO: ${order.uid.takeLast(6)}\"\n")
-        sb.append("TEXT 50,210,\"3\",0,1,1,\"CLIENTE: ${order.nameClient}\"\n")
+        sb.append("TEXT 630,50,\"2\",90,1,1,\"PEDIDO: ${order.uid.takeLast(6)}\"\n")
+        sb.append("TEXT 590,50,\"2\",90,1,1,\"CLIENTE: ${order.nameClient}\"\n")
         
         val isDelivery = order.reception.trim().uppercase().contains("DELIVERY")
-        sb.append("TEXT 50,250,\"3\",0,1,1,\"TIPO: ${if (isDelivery) "DELIVERY" else "RECOJO"}\"\n")
+        val tipo = if (isDelivery) "DELIVERY" else "RECOJO"
+        sb.append("TEXT 550,50,\"2\",90,1,1,\"TIPO: $tipo\"\n")
         
-        if (isDelivery && order.address.isNotBlank()) {
-            // El texto ahora puede ser un poco más largo
-            sb.append("TEXT 50,290,\"2\",0,1,1,\"DIR: ${order.address.take(50)}\"\n")
+        if (isDelivery && order.address.isNotBlank() && order.address != "null") {
+            sb.append("TEXT 510,50,\"1\",90,1,1,\"DIR: ${order.address}\"\n")
         }
         
-        sb.append("BAR 50,330,700,2\n")
+        sb.append("BAR 480,50,1,1100\n")
         
-        // PRODUCTOS
-        var currentY = 360
+        // PRODUCTOS (Letra más pequeña para que quepa todo)
+        var currentX = 440
         order.orders.forEach { item ->
-            sb.append("TEXT 50,$currentY,\"3\",0,1,1,\"${item.quantity} x ${item.nameProduct}\"\n")
-            currentY += 45
+            sb.append("TEXT $currentX,50,\"2\",90,1,1,\"${item.quantity} x ${item.nameProduct} (${item.tamanio})\"\n")
+            currentX -= 40
             
             if (item.note.isNotBlank()) {
-                sb.append("TEXT 80,$currentY,\"2\",0,1,1,\"Nota: ${item.note.take(45)}\"\n")
-                currentY += 40
+                sb.append("TEXT $currentX,80,\"1\",90,1,1,\"Nota: ${item.note}\"\n")
+                currentX -= 35
             }
-            currentY += 10
         }
         
-        // TOTAL - Ubicado más abajo según la cantidad de productos
-        sb.append("BAR 50,$currentY,700,2\n")
-        currentY += 40
-        sb.append("TEXT 750,$currentY,\"4\",0,1,1,3,\"TOTAL: $${order.price}\"\n")
-        
-        // FOOTER
-        currentY += 60
-        sb.append("TEXT 400,$currentY,\"3\",0,1,1,2,\"¡Hecho con ♥!\"\n")
+        // TOTAL (Ubicado al final de la etiqueta horizontal)
+        sb.append("BAR 150,50,1,1100\n")
+        sb.append("TEXT 100,800,\"3\",90,1,1,\"TOTAL: $${order.price}\"\n")
         
         // FINALIZAR
         sb.append("PRINT 1,1\n")
@@ -68,6 +64,5 @@ object TicketFormatter {
         return sb.toString()
     }
 
-    // Mantenemos el anterior por si acaso, pero usaremos el TSPL
     fun formatOrder(order: ParentOrderModel): String = formatOrderTSPL(order)
 }
