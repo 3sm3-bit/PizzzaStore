@@ -3,7 +3,10 @@ package com.pizzza.pizzzastore.printer
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.dantsu.escposprinter.EscPosPrinter
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnections
@@ -24,6 +27,11 @@ class BluetoothPrinterManager(private val context: Context) {
 
     @SuppressLint("MissingPermission")
     fun autoDetectAndConnect() {
+        if (!hasBluetoothPermission()) {
+            Log.e(TAG, "No se puede auto-detectar: Falta permiso BLUETOOTH_CONNECT")
+            _isConnected.value = false
+            return
+        }
         try {
             val bluetoothDevicesList = BluetoothPrintersConnections().list
             if (bluetoothDevicesList != null && bluetoothDevicesList.isNotEmpty()) {
@@ -47,6 +55,10 @@ class BluetoothPrinterManager(private val context: Context) {
     }
 
     fun printTicket(content: String) {
+        if (!hasBluetoothPermission()) {
+            Log.e(TAG, "No se puede imprimir: Falta permiso BLUETOOTH_CONNECT")
+            return
+        }
         if (selectedDevice == null) {
             autoDetectAndConnect()
         }
@@ -62,6 +74,17 @@ class BluetoothPrinterManager(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error al imprimir: ${e.message}")
             }
+        }
+    }
+
+    private fun hasBluetoothPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
         }
     }
 }

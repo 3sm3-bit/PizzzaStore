@@ -33,10 +33,23 @@ class MainActivity : BaseActivity() {
         val permissionManager = rememberUiTayPermissionManager()
         
         LaunchedEffect(Unit) {
+            val permissions = mutableListOf<String>()
+            
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissionManager.requestPermission(android.Manifest.permission.POST_NOTIFICATIONS) {
-                    Log.d("Notifications", "Permiso otorgado al iniciar la app")
-                }
+                permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                permissions.add(android.Manifest.permission.BLUETOOTH_CONNECT)
+                permissions.add(android.Manifest.permission.BLUETOOTH_SCAN)
+            } else {
+                permissions.add(android.Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+
+            permissionManager.requestPermissions(permissions.toTypedArray()) {
+                Log.d("Permissions", "Permisos procesados")
+                // Intentar conectar impresora ahora que tenemos permisos
+                viewModel.reconnectPrinter()
             }
         }
 
