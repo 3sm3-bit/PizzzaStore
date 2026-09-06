@@ -65,14 +65,21 @@ class BluetoothPrinterManager(private val context: Context) {
 
         selectedDevice?.let { device ->
             try {
-                val printer = EscPosPrinter(BluetoothConnection(device), 203, 48f, 32)
-                printer.printFormattedTextAndCut(content)
-                Log.d(TAG, "Impresión exitosa")
-            } catch (e: EscPosConnectionException) {
-                Log.e(TAG, "Error de conexión: ${e.message}")
-                _isConnected.value = false
+                val connection = BluetoothConnection(device)
+                connection.connect()
+                
+                // Enviamos los comandos TSPL como bytes directos
+                val bytes = content.toByteArray(charset("GBK"))
+                connection.write(bytes)
+                connection.send()
+                
+                // Esperamos un momento para que termine de transmitir y desconectamos
+                Thread.sleep(500)
+                connection.disconnect()
+                
+                Log.d(TAG, "Comandos TSPL enviados con éxito a la POS-9250-L")
             } catch (e: Exception) {
-                Log.e(TAG, "Error al imprimir: ${e.message}")
+                Log.e(TAG, "Error al imprimir TSPL: ${e.message}")
             }
         }
     }

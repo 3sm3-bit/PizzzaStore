@@ -6,61 +6,61 @@ import java.util.Date
 import java.util.Locale
 
 object TicketFormatter {
-    fun formatOrder(order: ParentOrderModel): String {
+    /**
+     * Genera comandos TSPL para una etiqueta de 100mm x 150mm (estándar de este modelo)
+     */
+    fun formatOrderTSPL(order: ParentOrderModel): String {
         val sb = StringBuilder()
+        val printDateTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
         
-        val printDateTime = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(Date())
-
-        // Header
-        sb.append("[C]<b>PIZZZA STORE</b>\n")
-        sb.append("[C]$printDateTime\n")
-        sb.append("[C]--------------------------------\n")
+        // Comandos Iniciales TSPL
+        sb.append("SIZE 100 mm, 100 mm\n") // Ajustamos a etiqueta de 100x100mm
+        sb.append("GAP 3 mm, 0 mm\n")      // Espacio entre etiquetas
+        sb.append("DIRECTION 1\n")          // Orientación normal
+        sb.append("CLS\n")                  // Limpiar memoria de la impresora
         
-        // Order Info
-        sb.append("[L]Pedido: ${order.uid.takeLast(6)}\n")
-        sb.append("[L]Fecha Pedido: ${order.date}\n")
-        sb.append("[L]Cliente: ${order.nameClient}\n")
-        sb.append("[L]Tel: ${order.phone}\n")
+        // HEADER - Centrado (Aprox X=400 para papel de 100mm/800dots)
+        sb.append("TEXT 400,30,\"4\",0,1,1,2,\"PIZZZA STORE\"\n")
+        sb.append("TEXT 400,80,\"2\",0,1,1,2,\"$printDateTime\"\n")
+        sb.append("BAR 50,120,700,3\n") // Línea divisoria
+        
+        // DATOS DEL PEDIDO
+        sb.append("TEXT 50,150,\"3\",0,1,1,\"PEDIDO: ${order.uid.takeLast(6)}\"\n")
+        sb.append("TEXT 50,190,\"3\",0,1,1,\"CLIENTE: ${order.nameClient}\"\n")
         
         val isDelivery = order.reception.trim().uppercase().contains("DELIVERY")
-        sb.append("[L]Tipo: ${if (isDelivery) "DELIVERY" else "LOCAL"}\n")
+        sb.append("TEXT 50,230,\"3\",0,1,1,\"TIPO: ${if (isDelivery) "DELIVERY" else "RECOJO"}\"\n")
         
         if (isDelivery && order.address.isNotBlank()) {
-            sb.append("[L]Direccion: ${order.address}\n")
+            sb.append("TEXT 50,270,\"2\",0,1,1,\"DIR: ${order.address.take(40)}\"\n")
         }
         
-        sb.append("[C]--------------------------------\n")
+        sb.append("BAR 50,310,700,2\n")
         
-        // Items
+        // PRODUCTOS (Manejamos el eje Y dinámicamente)
+        var currentY = 340
         order.orders.forEach { item ->
-            sb.append("[L]<b>${item.quantity} x ${item.nameProduct}</b>\n")
-            sb.append("[L]  ${item.tamanio} - ${item.typeDough}\n")
-            
-            if (item.cheeseFilledCrust.trim().uppercase() == "SI") {
-                sb.append("[L]  * Orilla de queso (+${item.priceChosse})\n")
-            }
+            sb.append("TEXT 50,$currentY,\"3\",0,1,1,\"${item.quantity} x ${item.nameProduct}\"\n")
+            currentY += 40
             
             if (item.note.isNotBlank()) {
-                sb.append("[L]  Nota: ${item.note}\n")
+                sb.append("TEXT 80,$currentY,\"2\",0,1,1,\"Nota: ${item.note.take(35)}\"\n")
+                currentY += 35
             }
-            
-            val subtotal = (item.quantity.toDoubleOrNull() ?: 0.0) * (item.price.toDoubleOrNull() ?: 0.0)
-            sb.append("[R]$${subtotal.toInt()}\n")
-            sb.append("[L]\n")
+            currentY += 10
         }
         
-        sb.append("[C]--------------------------------\n")
+        // TOTAL
+        sb.append("BAR 50,$currentY,700,2\n")
+        currentY += 30
+        sb.append("TEXT 750,$currentY,\"4\",0,1,1,3,\"TOTAL: $${order.price}\"\n")
         
-        // Total
-        sb.append("[R]<font size='big'>TOTAL: $${order.price}</font>\n")
-        
-        // Footer
-        sb.append("[C]\n")
-        sb.append("[C]¡Buen provecho!\n")
-        sb.append("[C]Gracias por su preferencia\n")
-        sb.append("[C]\n")
-        sb.append("[C]\n") // Extra space for cutting
+        // FINALIZAR
+        sb.append("PRINT 1,1\n") // Imprimir 1 copia
         
         return sb.toString()
     }
+
+    // Mantenemos el anterior por si acaso, pero usaremos el TSPL
+    fun formatOrder(order: ParentOrderModel): String = formatOrderTSPL(order)
 }
