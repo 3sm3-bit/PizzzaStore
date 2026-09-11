@@ -35,8 +35,19 @@ class BluetoothPrinterManager(private val context: Context) {
                 } ?: bluetoothDevicesList.first()
 
                 selectedDevice = connection.device
-                Log.d(TAG, "Impresora detectada: ${selectedDevice?.name}")
-                _isConnected.value = true
+                Log.d(TAG, "Impresora detectada: ${selectedDevice?.name}. Verificando conexión real...")
+                
+                // Intentamos una conexión física real de prueba para ver si responde
+                try {
+                    val testConnection = BluetoothConnection(selectedDevice)
+                    testConnection.connect()
+                    testConnection.disconnect()
+                    Log.d(TAG, "Conexión real confirmada exitosa")
+                    _isConnected.value = true
+                } catch (connectException: Exception) {
+                    Log.w(TAG, "La impresora está vinculada pero parece estar apagada o fuera de alcance: ${connectException.message}")
+                    _isConnected.value = false
+                }
             } else {
                 Log.d(TAG, "No se encontraron dispositivos Bluetooth vinculados")
                 _isConnected.value = false
@@ -68,9 +79,13 @@ class BluetoothPrinterManager(private val context: Context) {
                 connection.disconnect()
                 
                 Log.d(TAG, "Etiqueta TSPL enviada correctamente")
+                _isConnected.value = true
             } catch (e: Exception) {
                 Log.e(TAG, "Error en envío TSPL: ${e.message}")
+                _isConnected.value = false // Se desconectó o apagó
             }
+        } ?: run {
+            _isConnected.value = false
         }
     }
 
