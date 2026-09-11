@@ -4,6 +4,8 @@ import android.util.Log
 import com.pizzza.pizzzastore.model.ParentOrderModel
 import com.pizzza.pizzzastore.usecases.DataUseCase
 import com.pizzza.pizzzastore.DispatcherProvider
+import com.pizzza.pizzzastore.printer.BluetoothPrinterManager
+import com.pizzza.pizzzastore.repository.network.WebSocketManager
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -12,6 +14,7 @@ import io.mockk.unmockkAll
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -34,6 +37,8 @@ class AppViewModelTest {
     }
 
     private lateinit var dataUseCase: DataUseCase
+    private lateinit var printerManager: BluetoothPrinterManager
+    private lateinit var webSocketManager: WebSocketManager
     private lateinit var viewModel: AppViewModel
 
     @BeforeTest
@@ -47,8 +52,15 @@ class AppViewModelTest {
         Dispatchers.setMain(testDispatcher)
         
         dataUseCase = mockk()
+        printerManager = mockk()
+        webSocketManager = mockk()
+        
+        every { printerManager.autoDetectAndConnect() } returns Unit
+        every { printerManager.isConnected } returns MutableStateFlow(false)
+        every { webSocketManager.isConnected } returns MutableStateFlow(false)
+        
         // Inyectamos el UseCase y nuestros Dispatchers de prueba
-        viewModel = AppViewModel(dataUseCase, testDispatchers)
+        viewModel = AppViewModel(dataUseCase, testDispatchers, printerManager, webSocketManager)
     }
 
     @AfterTest
@@ -69,7 +81,7 @@ class AppViewModelTest {
             ParentOrderModel(
                 uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), 
                 description = "", phone = "", price = "200", date = "", address = "", reception = "",
-                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0", canal = "APP"
             )
         )
         coEvery { dataUseCase.loadParentOrder(any()) } returns mockOrders
@@ -97,7 +109,7 @@ class AppViewModelTest {
             ParentOrderModel(
                 uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), 
                 description = "", phone = "", price = "200", date = "", address = "", reception = "",
-                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0", canal = "APP"
             )
         )
         coEvery { dataUseCase.loadParentOrder(any()) } returns mockOrders
