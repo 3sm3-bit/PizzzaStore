@@ -64,7 +64,7 @@ class AppViewModelTest {
             ParentOrderModel(
                 uid = "1", nameClient = "Tayler", state = "CONFIRMADO", orders = emptyList(), 
                 description = "", phone = "", price = "100", date = "", address = "", reception = "",
-                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0", canal = "APP"
             ),
             ParentOrderModel(
                 uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), 
@@ -92,7 +92,7 @@ class AppViewModelTest {
             ParentOrderModel(
                 uid = "1", nameClient = "Tayler", state = "CONFIRMADO", orders = emptyList(), 
                 description = "", phone = "", price = "100", date = "", address = "", reception = "",
-                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0"
+                symbol = "$", branchId = "1", stage = "1", latitude = "0", longitude = "0", userId = "0", driverId = "0", canal = "APP"
             ),
             ParentOrderModel(
                 uid = "2", nameClient = "Juan", state = "LISTO", orders = emptyList(), 

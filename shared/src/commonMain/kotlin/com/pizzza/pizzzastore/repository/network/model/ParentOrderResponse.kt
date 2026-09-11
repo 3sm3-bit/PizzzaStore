@@ -39,6 +39,8 @@ class ParentOrderResponse(
     val userId: String? = "0",
     @SerialName("driverId")
     val driverId: String? = "0",
+    @SerialName("canal")
+    val canal: String? = "",
     @SerialName("orders")
     val orders: List<OrderResponse>? = emptyList()
 )
@@ -61,6 +63,7 @@ fun List<ParentOrderResponse>.loadParentOrder() = this.map {
         longitude = it.longitude ?: "0",
         userId = it.userId ?: "0",
         driverId = it.driverId ?: "0",
+        canal = it.canal ?: "",
         orders = it.orders?.loadOrder() ?: emptyList()
     )
 }

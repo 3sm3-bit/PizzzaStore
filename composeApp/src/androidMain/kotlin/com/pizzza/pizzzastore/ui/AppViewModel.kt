@@ -146,15 +146,13 @@ class AppViewModel(
         }
         
         nextState?.let {
-            // Si el estado actual es CONFIRMADO y vamos a imprimir, validamos conexión
+            // Si el estado actual es CONFIRMADO y vamos a imprimir, intentamos imprimir
             if (currentState == "CONFIRMADO") {
-                if (!orderUiState.isPrinterConnected) {
-                    // Si no hay impresora, no avanzamos y lanzamos error para que la UI lo maneje
-                    Log.e("AppViewModel", "Intento de impresión fallido: Impresora desconectada")
-                    // Podríamos setear un error específico en uiStateBase si quisiéramos
-                    return
+                if (orderUiState.isPrinterConnected) {
+                    printOrder(order)
+                } else {
+                    Log.e("AppViewModel", "Intento de impresión omitido: Impresora desconectada")
                 }
-                printOrder(order)
             }
             updateOrderState(order, it)
         }

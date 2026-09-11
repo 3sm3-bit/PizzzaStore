@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -192,16 +194,13 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                                 backgroundColor = Color.White,
                                 textColor = Color(0xFF1C1E21),
                                 onDetailClick = { viewModel.selectOrder(order) },
-                                onStateChange = { action ->
-                                    if (action == "AVANZAR") {
-                                        if (order.state.trim().uppercase() == "CONFIRMADO" && !uiState.isPrinterConnected) {
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
-                                            }
-                                        } else {
-                                            viewModel.avanzarEstado(order)
+                                onStateChange = {
+                                    if (order.state.trim().uppercase() == "CONFIRMADO" && !uiState.isPrinterConnected) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
                                         }
                                     }
+                                    viewModel.avanzarEstado(order)
                                 }
                             )
                         }
@@ -234,7 +233,7 @@ fun OrderCard(
     backgroundColor: Color,
     textColor: Color,
     onDetailClick: () -> Unit,
-    onStateChange: (String) -> Unit
+    onStateChange: () -> Unit
 ) {
     val statusColor = when (order.state.trim().uppercase()) {
         "CONFIRMADO" -> Color(0xFF3B82F6) // Azul
@@ -272,6 +271,14 @@ fun OrderCard(
                         maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
+                    
+                    Icon(
+                        imageVector = if (order.canal.trim().uppercase() == "CALL") Icons.Default.Phone else Icons.Default.Smartphone,
+                        contentDescription = "Canal: ${order.canal}",
+                        modifier = Modifier.padding(horizontal = 8.dp).size(18.dp),
+                        tint = Color(0xFF65676B)
+                    )
+                    
                     Surface(
                         color = statusColor.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(4.dp)
@@ -292,14 +299,23 @@ fun OrderCard(
                     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "${item.quantity} ${item.nameProduct} ${item.typeDough}",
-                                style = textM14,
-                                color = textColor,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "${item.quantity} ${item.nameProduct}",
+                                    style = textM14,
+                                    color = textColor
+                                )
+                                Text(
+                                    text = " - ${item.tamanio}, ${item.typeDough}",
+                                    style = textS12,
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF65676B),
+                                    modifier = Modifier.padding(start = 4.dp)
+                                )
+                            }
                             val subtotal = (item.quantity.toDoubleOrNull() ?: 0.0) * (item.price.toDoubleOrNull() ?: 0.0)
                             Text(
                                 text = "$${subtotal.toInt()}",
@@ -342,16 +358,25 @@ fun OrderCard(
                 // Logística y Total
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Bottom
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         val isDelivery = order.reception.trim().uppercase().contains("DELIVERY")
-                        Text(
-                            text = if (isDelivery) "🏠 DELIVERY" else "🛍️ RECOJO EN LOCAL",
-                            style = textB12,
-                            fontSize = 11.sp,
-                            color = if (isDelivery) Color(0xFFE91E63) else Color(0xFF007BFF)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (isDelivery) Icons.Default.Home else Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (isDelivery) Color(0xFFE91E63) else Color(0xFF007BFF)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isDelivery) "DELIVERY" else "RECOJO EN LOCAL",
+                                style = textB12,
+                                fontSize = 11.sp,
+                                color = if (isDelivery) Color(0xFFE91E63) else Color(0xFF007BFF)
+                            )
+                        }
                         if (isDelivery && order.address.isNotBlank() && order.address.lowercase() != "null") {
                             Text(
                                 text = order.address,
@@ -359,7 +384,7 @@ fun OrderCard(
                                 fontSize = 10.sp,
                                 lineHeight = 12.sp,
                                 color = Color(0xFF65676B),
-                                maxLines = 2,
+                                maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
@@ -408,7 +433,7 @@ fun OrderCard(
 
                     if (actionButtonText != null) {
                         Button(
-                            onClick = { onStateChange("AVANZAR") },
+                            onClick = { onStateChange() },
                             modifier = Modifier.weight(1f).height(32.dp),
                             contentPadding = PaddingValues(0.dp),
                             colors = ButtonDefaults.buttonColors(
@@ -504,10 +529,10 @@ fun OrderDetailSheet(
                 Icon(
                     imageVector = if (isDelivery) Icons.Default.Home else Icons.Default.ShoppingCart,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(18.dp),
                     tint = if (isDelivery) Color(0xFFE91E63) else Color(0xFF007BFF)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (isDelivery) "Envío a: ${order.address}" else "Recojo en local",
                     style = textS14,
@@ -551,19 +576,35 @@ fun OrderDetailSheet(
                                 )
                                 if (item.cheeseFilledCrust.trim().uppercase() == "SI") {
                                     Text(
-                                        text = "🧀 Con orilla de queso",
+                                        text = "🧀 Con orilla de queso (+$${item.priceChosse})",
                                         style = textB10,
                                         color = Color(0xFF10B981),
                                         modifier = Modifier.padding(top = 2.dp)
                                     )
                                 }
+                                if (item.note.isNotBlank()) {
+                                    Text(
+                                        text = "📝 Nota: ${item.note}",
+                                        style = textS12,
+                                        color = Color(0xFFE91E63),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
                             }
 
-                            Text(
-                                text = "$${(item.price.toDoubleOrNull() ?: 0.0).toInt()}",
-                                style = textB16,
-                                color = Color(0xFF1C1E21)
-                            )
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "$${(item.price.toDoubleOrNull() ?: 0.0).toInt()}",
+                                    style = textB16,
+                                    color = Color(0xFF1C1E21)
+                                )
+                                Text(
+                                    text = "unit.",
+                                    style = textS12,
+                                    fontSize = 10.sp,
+                                    color = Color(0xFF8A8D91)
+                                )
+                            }
                         }
                     }
                 }

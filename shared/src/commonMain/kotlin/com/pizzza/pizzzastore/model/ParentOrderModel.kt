@@ -20,6 +20,7 @@ data class ParentOrderModel(
     val longitude: String,
     val userId: String,
     val driverId: String,
+    val canal: String,
     val orders: List<OrderModel>
 ) {
     fun toParentOrderRequest() =
@@ -40,6 +41,7 @@ data class ParentOrderModel(
             longitude = longitude,
             userId = userId,
             driverId = driverId,
+            canal = canal,
             orders = emptyList() // Or map it back if needed, but usually for requests we might not need all orders
         )
 }
