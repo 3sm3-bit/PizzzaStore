@@ -101,13 +101,13 @@ fun EditPizzaScreen(
                 }
             }
         },
-        containerColor = Color.White,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        containerColor = Color.White
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .consumeWindowInsets(padding)
                 .imePadding()
                 .padding(16.dp)
                 .background(Color.White)

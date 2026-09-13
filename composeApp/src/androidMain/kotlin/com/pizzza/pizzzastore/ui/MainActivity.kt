@@ -48,7 +48,6 @@ class MainActivity : BaseActivity() {
 
             permissionManager.requestPermissions(permissions.toTypedArray()) {
                 Log.d("Permissions", "Permisos procesados")
-                // Intentar conectar impresora ahora que tenemos permisos
                 viewModel.reconnectPrinter()
             }
         }
@@ -63,13 +62,8 @@ class MainActivity : BaseActivity() {
         // Cargar el ID de sucursal guardado (default "1")
         val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
         viewModel.setInitialSelectedBranchId(savedBranchId)
-
         observeSocketForRefresh()
-        
-        // Iniciar el servicio de notificaciones automáticamente al abrir la app
         startWebSocketService()
-        
-        // Observar cambios en el ID de sucursal para guardarlos y reiniciar el servicio
         observeBranchIdChanges()
     }
 
@@ -117,8 +111,4 @@ class MainActivity : BaseActivity() {
 
     override fun getViewModel(): BaseViewModel = viewModel
 
-    override fun getViewModels(): List<BaseViewModel> = listOf(
-        viewModel,
-        storeViewModel
-    )
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Print
@@ -23,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,14 +35,19 @@ import com.valu.uitaycompose.utils.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
+fun OrderScreen(
+    viewModel: AppViewModel,
+    onNavigateToMenuOptions: () -> Unit,
+    onLogout: () -> Unit
+) {
     val uiState = viewModel.orderUiState
     var showSheet by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
     // Lógica Adaptativa
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
     
@@ -61,17 +68,19 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToMenuOptions,
-                containerColor = tay_green_600,
-                contentColor = Color.White,
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = "Ver Productos",
-                    modifier = Modifier.size(28.dp)
-                )
+            if (uiState.userRole?.trim()?.uppercase() == "ADMIN") {
+                FloatingActionButton(
+                    onClick = onNavigateToMenuOptions,
+                    containerColor = tay_green_600,
+                    contentColor = Color.White,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.List,
+                        contentDescription = "Ver Productos",
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         },
         containerColor = Color(0xFFF0F2F5)
@@ -88,7 +97,7 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Gestión de Pedidos",
+                        text = "Pedidos",
                         style = textB20,
                         fontSize = 18.sp,
                         color = Color(0xFF1C1E21)
@@ -98,22 +107,6 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Icono de Socket (En Línea)
-                        Icon(
-                            imageVector = Icons.Default.Wifi,
-                            contentDescription = "Estado Conexión",
-                            modifier = Modifier.size(24.dp),
-                            tint = if (uiState.isSocketConnected) Color(0xFF10B981) else Color(0xFFF44336)
-                        )
-
-                        // Icono de Impresora Inteligente
-                        Icon(
-                            imageVector = Icons.Default.Print,
-                            contentDescription = "Estado Impresora",
-                            modifier = Modifier.size(24.dp),
-                            tint = if (uiState.isPrinterConnected) Color(0xFF10B981) else Color(0xFFF44336)
-                        )
-
                         IconButton(
                             onClick = { viewModel.refresh() },
                             modifier = Modifier
@@ -128,6 +121,21 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                                 tint = Color(0xFF007BFF)
                             )
                         }
+
+                        IconButton(
+                            onClick = { showLogoutDialog = true },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color.White, RoundedCornerShape(10.dp))
+                                .border(1.dp, Color(0xFFDDDFE2), RoundedCornerShape(10.dp))
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Cerrar Sesión",
+                                modifier = Modifier.size(20.dp),
+                                tint = tay_red_600
+                            )
+                        }
                     }
                 }
 
@@ -136,7 +144,8 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                 // Indicadores de estado (Resumen)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     StatusIndicator(
                         text = "PENDIENTES",
@@ -144,6 +153,26 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                         color = Color(0xFF3B82F6),
                         modifier = Modifier.weight(1f)
                     )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Wifi,
+                            contentDescription = "Estado Conexión",
+                            modifier = Modifier.size(20.dp),
+                            tint = if (uiState.isSocketConnected) Color(0xFF10B981) else Color(0xFFF44336)
+                        )
+
+                        Icon(
+                            imageVector = Icons.Default.Print,
+                            contentDescription = "Estado Impresora",
+                            modifier = Modifier.size(20.dp),
+                            tint = if (uiState.isPrinterConnected) Color(0xFF10B981) else Color(0xFFF44336)
+                        )
+                    }
+
                     StatusIndicator(
                         text = "ENTREGADO",
                         count = uiState.countEntregado,
@@ -153,34 +182,6 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                if (uiState.orders.isEmpty() && !viewModel.uiStateBase.loading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = Color.Gray
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No se encontraron pedidos",
-                                style = textM16,
-                                color = Color.Gray
-                            )
-                            Button(
-                                onClick = { viewModel.refresh() },
-                                modifier = Modifier.padding(top = 16.dp)
-                            ) {
-                                Text("Intentar de nuevo")
-                            }
-                        }
-                    }
-                } else {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(columns),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -203,7 +204,7 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                                     viewModel.avanzarEstado(order)
                                 }
                             )
-                        }
+
                     }
                 }
             }
@@ -221,6 +222,40 @@ fun OrderScreen(viewModel: AppViewModel, onNavigateToMenuOptions: () -> Unit) {
                             }
                         }
                     }
+                )
+            }
+
+            if (showLogoutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutDialog = false },
+                    title = { Text(text = "Cerrar Sesión", style = textB20, color = tay_red_600) },
+                    text = {
+                        Text(
+                            text = "¿Estás seguro de que deseas cerrar sesión?",
+                            style = textM14, color = Color.Gray
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showLogoutDialog = false
+                                viewModel.resetOrderState()
+                                viewModel.logout {
+                                    onLogout()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = tay_red_600)
+                        ) {
+                            Text("Sí, salir", color = Color.White)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showLogoutDialog = false }) {
+                            Text("No", color = Color.Gray)
+                        }
+                    },
+                    containerColor = Color.White,
+                    shape = RoundedCornerShape(16.dp)
                 )
             }
         }

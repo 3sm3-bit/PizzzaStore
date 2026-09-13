@@ -24,6 +24,7 @@ import com.pizzza.pizzzastore.ui.products.EditOtherProductScreen
 import com.pizzza.pizzzastore.ui.menu.MenuOptionsScreen
 import com.pizzza.pizzzastore.ui.branches.BranchScreen
 import com.pizzza.pizzzastore.ui.branches.EditBranchScreen
+import com.pizzza.pizzzastore.ui.login.LoginScreen
 import com.pizzza.pizzzastore.ui.menu.ConfigNotiScreen
 import com.pizzza.pizzzastore.ui.menu.ListUserScreen
 import com.pizzza.pizzzastore.ui.splash.SplashScreen
@@ -39,19 +40,42 @@ fun AppNavigation(
             LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             SplashScreen(
                 viewModel = viewModel,
-                onFinished = {
-                    navController.navigate(Orders) {
-                        popUpTo<Splash> { inclusive = true }
+                onFinished = {value ->
+                    if (value){
+                        navController.navigate(Orders) {
+                            popUpTo<Splash> { inclusive = true }
+                        }
+                    }else{
+                        navController.navigate(Login) {
+                            popUpTo<Splash> { inclusive = true }
+                        }
                     }
+
                 }
             )
         }
         
         composable<Orders> {
             LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
-            OrderScreen(viewModel, onNavigateToMenuOptions = {
-                navController.navigate(MenuOptions)
-            })
+            OrderScreen(
+                viewModel = viewModel,
+                onNavigateToMenuOptions = {
+                    navController.navigate(MenuOptions)
+                },
+                onLogout = {
+                    navController.navigate(Login) {
+                        popUpTo(Orders) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable<Login> {
+            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+            LoginScreen {
+                navController.navigate(Orders) {
+                    popUpTo<Splash> { inclusive = true }
+                }
+            }
         }
         composable<MenuOptions> {
             LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)

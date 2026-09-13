@@ -12,6 +12,7 @@ import com.pizzza.pizzzastore.model.BranchModel
 import com.pizzza.pizzzastore.printer.BluetoothPrinterManager
 import com.pizzza.pizzzastore.printer.TicketFormatter
 import com.pizzza.pizzzastore.ui.base.BaseViewModel
+import com.pizzza.pizzzastore.ui.base.GlobalUiStateManager
 import com.pizzza.pizzzastore.ui.orders.OrderUiState
 import com.pizzza.pizzzastore.usecases.DataUseCase
 import kotlinx.coroutines.flow.collectLatest
@@ -22,34 +23,42 @@ class AppViewModel(
     private val dataUseCase: DataUseCase,
     private val dispatchers: DispatcherProvider,
     private val printerManager: BluetoothPrinterManager,
-    private val webSocketManager: com.pizzza.pizzzastore.repository.network.WebSocketManager
-) : BaseViewModel(dispatchers) {
+    private val webSocketManager: com.pizzza.pizzzastore.repository.network.WebSocketManager,
+    private val globalUiStateManager: GlobalUiStateManager,
+) : BaseViewModel() {
 
     var orderUiState by mutableStateOf(OrderUiState())
         private set
 
     init {
-        // Auto-detección de impresora al iniciar
         printerManager.autoDetectAndConnect()
-        
-        // Escuchar el estado de conexión de la impresora
         viewModelScope.launch {
             printerManager.isConnected.collectLatest { connected ->
                 orderUiState = orderUiState.copy(isPrinterConnected = connected)
             }
         }
 
-        // Escuchar el estado de conexión del socket
         viewModelScope.launch {
             webSocketManager.isConnected.collectLatest { connected ->
                 orderUiState = orderUiState.copy(isSocketConnected = connected)
             }
         }
+
+        loadUserRole()
+    }
+
+    fun loadUserRole() {
+        viewModelScope.launch {
+            val user = dataUseCase.getUserLocal()
+            orderUiState = orderUiState.copy(userRole = user?.rol)
+            Log.d("AppViewModel", "🍕 Rol de usuario cargado: ${user?.rol}")
+        }
     }
 
     fun getGeneralOrderList() {
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
-        execute {
+        loadUserRole()
+        execute(globalUiStateManager = globalUiStateManager) {
             try {
                 val response = dataUseCase.loadParentOrder()
                 updateStateWithOrders(response)
@@ -62,7 +71,7 @@ class AppViewModel(
 
     fun refresh() {
         Log.d("AppViewModel", "refresh: Forzando refresco")
-        execute {
+        execute(globalUiStateManager = globalUiStateManager) {
             try {
                 val response = dataUseCase.loadParentOrder(forceRefresh = true)
                 updateStateWithOrders(response)
@@ -146,7 +155,6 @@ class AppViewModel(
         }
         
         nextState?.let {
-            // Si el estado actual es CONFIRMADO y vamos a imprimir, intentamos imprimir
             if (currentState == "CONFIRMADO") {
                 if (orderUiState.isPrinterConnected) {
                     printOrder(order)
@@ -183,8 +191,9 @@ class AppViewModel(
                         extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
                         deliveryProducts = updatedProducts.filter { it.type == "4" }
                     )
+                    val localUser = io { dataUseCase.getUserLocal() }
                     println("AppViewModel: Sincronización exitosa. Total: ${updatedProducts.size}")
-                    onComplete(true)
+                    onComplete(localUser!=null)
                 }
             } catch (e: Exception) {
                 Log.e("AppViewModel", "Error crítico en sincronización: ${e.message}")
@@ -195,52 +204,8 @@ class AppViewModel(
         }
     }
 
-    fun getProductsList() {
-        val hasData = orderUiState.products.isNotEmpty()
-        // Si ya hay datos, cargamos en segundo plano para no bloquear
-        execute(loading = !hasData) {
-            try {
-                val response = dataUseCase.getProducts()
-                withContext(dispatchers.main) {
-                    orderUiState = orderUiState.copy(
-                        products = response,
-                        pizzaProducts = response.filter { it.type == "1" },
-                        extraProducts = response.filter { it.type == "2" || it.type == "3" },
-                        deliveryProducts = response.filter { it.type == "4" }
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("AppViewModel", "Error en getProductsList: ${e.message}", e)
-                throw e
-            }
-        }
-    }
-
-    fun getBranchesList() {
-        val hasData = orderUiState.branches.isNotEmpty()
-        execute(loading = !hasData) {
-            try {
-                val response = dataUseCase.getBranches()
-                withContext(dispatchers.main) {
-                    orderUiState = orderUiState.copy(branches = response)
-                }
-            } catch (e: Exception) {
-                Log.e("AppViewModel", "Error en getBranchesList: ${e.message}", e)
-                throw e
-            }
-        }
-    }
-
     fun selectOrder(order: ParentOrderModel?) {
         orderUiState = orderUiState.copy(selectedOrder = order)
-    }
-
-    fun selectBranch(branch: BranchModel?) {
-        orderUiState = orderUiState.copy(selectedBranch = branch)
-    }
-
-    fun selectProduct(product: ProductModel?) {
-        orderUiState = orderUiState.copy(selectedProduct = product)
     }
 
     fun updateSelectedBranchForNotifications(branchId: String) {
@@ -251,50 +216,25 @@ class AppViewModel(
         orderUiState = orderUiState.copy(selectedBranchId = branchId)
     }
 
-    fun setCategory(category: String) {
-        orderUiState = orderUiState.copy(selectedCategory = category)
-    }
-
-    fun updateProduct(product: ProductModel, onSuccess: () -> Unit) {
-        execute {
-            try {
-                dataUseCase.updateProduct(product)
-                getProductsList()
-                withContext(dispatchers.main) {
-                    onSuccess()
-                }
-            } catch (e: Exception) {
-                Log.e("AppViewModel", "Error al actualizar producto: ${e.message}", e)
-                throw e
-            }
-        }
-    }
-
-    fun updateBranch(branch: BranchModel, onSuccess: () -> Unit) {
-        execute {
-            try {
-                dataUseCase.updateBranch(branch)
-                // Refrescar la lista localmente o desde el servidor
-                getBranchesList()
-                withContext(dispatchers.main) {
-                    onSuccess()
-                }
-            } catch (e: Exception) {
-                Log.e("AppViewModel", "Error al actualizar sucursal: ${e.message}", e)
-                throw e
-            }
-        }
-    }
-
     fun reconnectPrinter() {
         printerManager.autoDetectAndConnect()
     }
 
     fun reprintOrder(order: ParentOrderModel) {
         if (!orderUiState.isPrinterConnected) {
-            // Podríamos disparar un error visual aquí
             return
         }
         printOrder(order)
+    }
+
+    fun resetOrderState() {
+        orderUiState = OrderUiState()
+    }
+
+    fun logout(onSuccess: () -> Unit) {
+        execute(globalUiStateManager = globalUiStateManager) {
+            io { dataUseCase.logout() }
+            onSuccess()
+        }
     }
 }

@@ -6,8 +6,11 @@ import com.pizzza.pizzzastore.usecases.DataUseCase
 import com.pizzza.pizzzastore.DispatcherProvider
 import com.pizzza.pizzzastore.printer.BluetoothPrinterManager
 import com.pizzza.pizzzastore.repository.network.WebSocketManager
+import com.pizzza.pizzzastore.ui.base.GlobalUiStateManager
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
@@ -39,6 +42,7 @@ class AppViewModelTest {
     private lateinit var dataUseCase: DataUseCase
     private lateinit var printerManager: BluetoothPrinterManager
     private lateinit var webSocketManager: WebSocketManager
+    private lateinit var globalUiStateManager: GlobalUiStateManager
     private lateinit var viewModel: AppViewModel
 
     @BeforeTest
@@ -54,13 +58,17 @@ class AppViewModelTest {
         dataUseCase = mockk()
         printerManager = mockk()
         webSocketManager = mockk()
+        globalUiStateManager = mockk()
+        
+        coEvery { dataUseCase.getUserLocal() } returns null
+        every { globalUiStateManager.updateUiState(any()) } just Runs
         
         every { printerManager.autoDetectAndConnect() } returns Unit
         every { printerManager.isConnected } returns MutableStateFlow(false)
         every { webSocketManager.isConnected } returns MutableStateFlow(false)
         
         // Inyectamos el UseCase y nuestros Dispatchers de prueba
-        viewModel = AppViewModel(dataUseCase, testDispatchers, printerManager, webSocketManager)
+        viewModel = AppViewModel(dataUseCase, testDispatchers, printerManager, webSocketManager, globalUiStateManager)
     }
 
     @AfterTest

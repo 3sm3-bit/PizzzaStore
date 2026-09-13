@@ -1,5 +1,6 @@
 package com.pizzza.pizzzastore.ui.base
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -7,73 +8,107 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.pizzza.pizzzastore.repository.network.exception.UiTayApiException
+import com.valu.uitaycompose.loading.UiProgress
+import com.valu.uitaycompose.modal.UiTayDialog
+import com.valu.uitaycompose.model.UiTayDialogModel
+import com.valu.uitaycompose.utils.tay_red_600
+import org.koin.android.ext.android.inject
+import  com.pizzza.pizzzastore.R
 
 abstract class BaseActivity : ComponentActivity() {
 
+    val globalUiStateManager: GlobalUiStateManager by inject()
+    open fun getViewModel(): BaseViewModel? = null
+
+    @Composable
+    fun RenderGenericDialog(
+        image: Int,
+        title: String,
+        subTitle: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        UiTayDialog(
+            model = UiTayDialogModel(
+                image = image,
+                title = title,
+                subTitle = subTitle,
+                isCancel = false
+            ),
+            onDismissRequest = { result: Boolean ->
+                onResult(result)
+            }
+        )
+    }
+
     @Composable
     abstract fun SetScreenConfig()
-    abstract  fun setDataGlobal()
-    open fun getViewModel(): BaseViewModel? = null
-    open fun getViewModels(): List<BaseViewModel> = emptyList()
+    abstract fun setDataGlobal()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color(0xFFA62626).toArgb())
         )
 
         setContent {
-            // Obtenemos todos los ViewModels a observar
-            val viewModels = getViewModels().ifEmpty { listOfNotNull(getViewModel()) }
-            
-            // Observamos el estado de carga (si alguno está cargando)
-            val isLoading = viewModels.any { it.uiStateBase.loading }
-            
-            // Buscamos el primer ViewModel que tenga un error
-            val viewModelWithError = viewModels.find { it.uiStateBase.error }
-            val errorState = viewModelWithError?.uiStateBase
+                CompositionLocalProvider(
+                    LocalGlobalUiStateManager provides globalUiStateManager
+                ) {
+                    val uiState by globalUiStateManager.uiState.collectAsStateWithLifecycle()
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                SetScreenConfig()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        SetScreenConfig()
 
-                if (isLoading) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = Color.Black.copy(alpha = 0.3f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = Color.White)
+                        if (uiState.loading) {
+                            UiProgress(colorProgress = tay_red_600)
                         }
-                    }
-                }
-                
-                errorState?.let { uiState ->
-                    AlertDialog(
-                        onDismissRequest = { 
-                            // Limpiamos el error en todos los ViewModels
-                            viewModels.forEach { it.uiStateBase = it.uiStateBase.copy(error = false) }
-                        },
-                        title = { Text("Error") },
-                        text = { Text(uiState.errorType.message ?: "Ocurrió un error inesperado") },
-                        confirmButton = {
-                            TextButton(onClick = { 
-                                viewModels.forEach { it.uiStateBase = it.uiStateBase.copy(error = false) }
-                            }) {
-                                Text("Aceptar")
+
+                        if (uiState.error) {
+                            val errorInfo = uiState.errorType.mapperError()
+                            RenderGenericDialog(
+                                image = errorInfo.first,
+                                title = errorInfo.second,
+                                subTitle = errorInfo.third
+                            ) { dialogResult ->
+                                globalUiStateManager.updateUiState { current ->
+                                    current.copy(
+                                        error = false,
+                                        popUpGeneric = true,
+                                        popUpGenericValue = dialogResult
+                                    )
+                                }
                             }
                         }
-                    )
-                }
+                    }
+
             }
         }
         setDataGlobal()
     }
+}
 
+fun Throwable.mapperError(): Triple<Int, String, String> {
+    return when (this) {
+        is UiTayApiException -> {
+            Triple(
+                R.drawable.ic_pizzza,
+                this.title.ifEmpty { "Error" },
+                this.messageApi.ifEmpty { "Ocurrió un error inesperado" }
+            )
+        }
+        else -> {
+            Triple(
+                R.drawable.ic_pizzza,
+                "Error",
+                this.message ?: "Ocurrió un error inesperado"
+            )
+        }
+    }
 }

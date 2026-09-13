@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 class StoreViewModel(
     private val dataUseCase: DataUseCase,
     private val dispatchers: DispatcherProvider
-) : BaseViewModel(dispatchers) {
+) : BaseViewModel() {
 
     var storeUiState by mutableStateOf(OrderUiState())
         private set

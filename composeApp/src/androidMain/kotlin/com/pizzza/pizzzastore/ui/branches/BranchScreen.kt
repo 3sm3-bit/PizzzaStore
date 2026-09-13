@@ -58,11 +58,6 @@ fun BranchScreen(
         },
         containerColor = Color(0xFFF0F2F5)
     ) { padding ->
-        if (uiState.branches.isEmpty() && viewModel.uiStateBase.loading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF007BFF))
-            }
-        } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -80,7 +75,7 @@ fun BranchScreen(
                     )
                 }
             }
-        }
+
     }
 }
 

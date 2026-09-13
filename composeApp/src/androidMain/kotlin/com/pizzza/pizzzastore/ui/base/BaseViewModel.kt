@@ -1,51 +1,76 @@
 package com.pizzza.pizzzastore.ui.base
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pizzza.pizzzastore.DispatcherProvider
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
-
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
-open class BaseViewModel(private val dispatchers: DispatcherProvider): ViewModel() {
+open class BaseViewModel(
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+): ViewModel() {
 
-    var uiStateBase by mutableStateOf(BaseUiState())
+    private val _uiStateBase = MutableStateFlow(BaseUiState())
+    val uiStateBase: StateFlow<BaseUiState> = _uiStateBase.asStateFlow()
 
-    fun execute(loading: Boolean = true, func: suspend () -> Unit) {
-        viewModelScope.launch(dispatchers.io) {
+    fun updateUiState(update: (BaseUiState) -> BaseUiState) {
+        _uiStateBase.update(update)
+    }
+
+    fun execute(
+        loading: Boolean = true,
+        globalUiStateManager: GlobalUiStateManager? = null,
+        func: suspend BaseViewModel.() -> Unit,
+    ) {
+        viewModelScope.launch {
             try {
-                withContext(dispatchers.main) {
-                    uiStateBase = uiStateBase.copy(loading = loading, error = false)
+                updateUiState { currentState ->
+                    currentState.copy(loading = loading, shimmer = true, error = false)
                 }
-                
+                globalUiStateManager?.updateUiState { currentState ->
+                    currentState.copy(loading = loading, shimmer = true, error = false)
+                }
                 func()
-                
-                withContext(dispatchers.main) {
-                    uiStateBase = uiStateBase.copy(loading = false)
-                }
             } catch (ex: Exception) {
-                withContext(dispatchers.main) {
-                    uiStateBase = uiStateBase.copy(error = true, errorType = ex, loading = false)
+                if (ex is CancellationException) {
+                    throw ex
+                }
+                ex.printStackTrace()
+                updateUiState { currentState ->
+                    currentState.copy(
+                        error = true,
+                        errorType = ex
+                    )
+                }
+                globalUiStateManager?.updateUiState { currentState ->
+                    currentState.copy(
+                        error = true,
+                        errorType = ex
+                    )
+                }
+            } finally {
+                updateUiState { currentState ->
+                    currentState.copy(loading = false, shimmer = false)
+                }
+                globalUiStateManager?.updateUiState { currentState ->
+                    currentState.copy(loading = false, shimmer = false)
                 }
             }
         }
     }
 
-    fun executeAlter(loading: Boolean = true,func:suspend ()->Unit){
-        viewModelScope.launch(dispatchers.io){
-            try {
-                uiStateBase = uiStateBase.copy(loading = loading)
-                delay(1000.milliseconds)
-                uiStateBase = uiStateBase.copy(loading = false)
-                func()
-            }catch (ex:Exception){
-                uiStateBase = uiStateBase.copy(error = true, errorType = ex, loading = false)
-            }
-        }
+    protected suspend fun <T> io(block: suspend () -> T): T = withContext(ioDispatcher) {
+        block()
+    }
+
+    protected suspend fun <T> default(block: suspend () -> T): T = withContext(defaultDispatcher) {
+        block()
     }
 }
