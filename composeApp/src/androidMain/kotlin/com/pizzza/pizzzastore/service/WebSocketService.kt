@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pizzza.pizzzastore.repository.network.WebSocketManager
+import com.pizzza.pizzzastore.usecases.DataUseCase
 import com.pizzza.pizzzastore.utils.AudioQueueManager
 import com.pizzza.pizzzastore.utils.NotificationHelper
 import kotlinx.coroutines.CoroutineScope
@@ -22,11 +23,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
 class WebSocketService : Service() {
 
     private val webSocketManager: WebSocketManager by inject()
+    private val dataUseCase: DataUseCase by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
     private lateinit var notificationHelper: NotificationHelper
@@ -101,28 +104,37 @@ class WebSocketService : Service() {
     }
 
     private fun setupWebSocket() {
-        // Obtener el branchId de las preferencias
-        val prefs = getSharedPreferences("pizza_prefs", Context.MODE_PRIVATE)
-        val branchId = prefs.getString("selected_branch_id", "1") ?: "1"
-        
-        println("🍕 WebSocketService - Conectando a sucursal: $branchId")
-        webSocketManager.connect(branchId = branchId)
-
-        // Escuchar notificaciones
-        webSocketManager.notifications
-            .onEach { notification ->
-                println("🍕 Service - Pedido Recibido: ${notification.titulo}")
-                
-                // Reproducir audio
-                audioQueueManager.enqueueAudio()
-
-                // Mostrar notificación visual del pedido
-                notificationHelper.showOrderNotification(
-                    title = notification.titulo,
-                    message = notification.mensaje
-                )
+        scope.launch {
+            val user = dataUseCase.getUserLocal()
+            if (user == null) {
+                println("🍕 WebSocketService - No hay sesión activa. Cancelando inicio de WebSocket.")
+                stopSelf()
+                return@launch
             }
-            .launchIn(scope)
+
+            // Obtener el branchId de las preferencias
+            val prefs = getSharedPreferences("pizza_prefs", Context.MODE_PRIVATE)
+            val branchId = prefs.getString("selected_branch_id", "1") ?: "1"
+            
+            println("🍕 WebSocketService - Conectando a sucursal: $branchId")
+            webSocketManager.connect(branchId = branchId)
+
+            // Escuchar notificaciones
+            webSocketManager.notifications
+                .onEach { notification ->
+                    println("🍕 Service - Pedido Recibido: ${notification.titulo}")
+                    
+                    // Reproducir audio
+                    audioQueueManager.enqueueAudio()
+
+                    // Mostrar notificación visual del pedido
+                    notificationHelper.showOrderNotification(
+                        title = notification.titulo,
+                        message = notification.mensaje
+                    )
+                }
+                .launchIn(scope)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

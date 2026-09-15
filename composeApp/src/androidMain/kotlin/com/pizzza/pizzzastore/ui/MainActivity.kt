@@ -63,8 +63,25 @@ class MainActivity : BaseActivity() {
         val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
         viewModel.setInitialSelectedBranchId(savedBranchId)
         observeSocketForRefresh()
-        startWebSocketService()
+        observeSessionChanges()
         observeBranchIdChanges()
+    }
+
+    private fun observeSessionChanges() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                snapshotFlow { viewModel.orderUiState.userRole }
+                    .collectLatest { role ->
+                        if (role != null) {
+                            println("🍕 MainActivity - Sesión activa detectada (Rol: $role). Iniciando WebSocketService.")
+                            startWebSocketService()
+                        } else {
+                            println("🍕 MainActivity - Sin sesión activa. Deteniendo WebSocketService.")
+                            stopWebSocketService()
+                        }
+                    }
+            }
+        }
     }
 
     private fun observeBranchIdChanges() {
@@ -77,9 +94,11 @@ class MainActivity : BaseActivity() {
                             println("🍕 MainActivity - Cambio de sucursal detectado: $branchId. Guardando y reiniciando servicio.")
                             prefs.edit().putString("selected_branch_id", branchId).apply()
                             
-                            // Reiniciar el servicio para que tome el nuevo branchId
-                            stopWebSocketService()
-                            startWebSocketService()
+                            // Reiniciar el servicio para que tome el nuevo branchId solo si hay sesión activa
+                            if (viewModel.orderUiState.userRole != null) {
+                                stopWebSocketService()
+                                startWebSocketService()
+                            }
                         }
                     }
             }
