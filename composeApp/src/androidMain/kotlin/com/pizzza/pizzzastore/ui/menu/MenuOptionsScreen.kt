@@ -25,6 +25,7 @@ import com.valu.uitaycompose.utils.textB20
 fun MenuOptionsScreen(
     onNavigateToProducts: () -> Unit,
     onNavigateToBranches: () -> Unit,
+    onNavigateToCreateProduct: () -> Unit,
     onNavigateToConfigNoti: () -> Unit,
     onNavigateToListUser: () -> Unit,
     onReconnectPrinter: () -> Unit,
@@ -64,6 +65,18 @@ fun MenuOptionsScreen(
                 Icon(Icons.Default.ShoppingCart, contentDescription = null)
                 Spacer(Modifier.width(12.dp))
                 Text("Productos")
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Button(
+                onClick = onNavigateToCreateProduct,
+                modifier = Modifier.fillMaxWidth().height(60.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
+            ) {
+                Icon(Icons.Default.ShoppingCart, contentDescription = null)
+                Spacer(Modifier.width(12.dp))
+                Text("Crear Producto")
             }
 
             Spacer(Modifier.height(16.dp))

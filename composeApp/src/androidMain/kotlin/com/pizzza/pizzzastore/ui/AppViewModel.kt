@@ -5,25 +5,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
-import com.pizzza.pizzzastore.DispatcherProvider
 import com.pizzza.pizzzastore.model.ParentOrderModel
-import com.pizzza.pizzzastore.model.ProductModel
-import com.pizzza.pizzzastore.model.BranchModel
 import com.pizzza.pizzzastore.printer.BluetoothPrinterManager
 import com.pizzza.pizzzastore.printer.TicketFormatter
+import com.pizzza.pizzzastore.repository.network.WebSocketManager
 import com.pizzza.pizzzastore.ui.base.BaseViewModel
 import com.pizzza.pizzzastore.ui.base.GlobalUiStateManager
 import com.pizzza.pizzzastore.ui.orders.OrderUiState
 import com.pizzza.pizzzastore.usecases.DataUseCase
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class AppViewModel(
     private val dataUseCase: DataUseCase,
-    private val dispatchers: DispatcherProvider,
     private val printerManager: BluetoothPrinterManager,
-    private val webSocketManager: com.pizzza.pizzzastore.repository.network.WebSocketManager,
+    private val webSocketManager: WebSocketManager,
     private val globalUiStateManager: GlobalUiStateManager,
 ) : BaseViewModel() {
 
@@ -122,15 +118,18 @@ class AppViewModel(
         val previousState = orderUiState
 
         // 2. Actualización Optimista: Actualizamos la UI inmediatamente
-        Log.d("AppViewModel", "updateOrderState: Actualización optimista de ${order.uid} a $newState")
-        val updatedOrders = orderUiState.orders.map { 
-            if (it.uid == order.uid) it.copy(state = newState) else it 
+        Log.d(
+            "AppViewModel",
+            "updateOrderState: Actualización optimista de ${order.uid} a $newState"
+        )
+        val updatedOrders = orderUiState.orders.map {
+            if (it.uid == order.uid) it.copy(state = newState) else it
         }
         updateStateWithOrders(updatedOrders)
 
         // 3. Sincronización en segundo plano
         // Usamos loading = false para que no aparezca el progreso global y la app se sienta "rápida"
-        execute(loading = false) {
+        execute(loading = false,globalUiStateManager = globalUiStateManager) {
             try {
                 dataUseCase.updateOrder(order.copy(state = newState))
                 Log.d("AppViewModel", "updateOrderState: Sincronización exitosa con servidor")
@@ -146,14 +145,14 @@ class AppViewModel(
     fun avanzarEstado(order: ParentOrderModel) {
         val currentState = order.state.trim().uppercase()
         val isDelivery = order.reception.trim().uppercase().contains("DELIVERY")
-        
+
         val nextState = when (currentState) {
             "CONFIRMADO" -> "RECEPCIONADO"
             "RECEPCIONADO" -> "LISTO"
             "LISTO" -> if (isDelivery) "ENVIADO" else "ENTREGADO"
             else -> null
         }
-        
+
         nextState?.let {
             if (currentState == "CONFIRMADO") {
                 if (orderUiState.isPrinterConnected) {
@@ -167,7 +166,7 @@ class AppViewModel(
     }
 
     fun printOrder(order: ParentOrderModel) {
-        execute(loading = false) {
+        execute(loading = false,globalUiStateManager = globalUiStateManager) {
             try {
                 val ticket = TicketFormatter.formatOrder(order)
                 printerManager.printTicket(ticket)
@@ -178,29 +177,20 @@ class AppViewModel(
     }
 
     fun syncProducts(onComplete: (Boolean) -> Unit = {}) {
-        execute(loading = false) {
-            try {
-                println("AppViewModel: Iniciando sincronización obligatoria...")
-                dataUseCase.syncProducts()
-                // Cargar lo que el servidor acaba de mandar (y que ya está en DB)
-                val updatedProducts = dataUseCase.getProducts()
-                withContext(dispatchers.main) {
-                    orderUiState = orderUiState.copy(
-                        products = updatedProducts,
-                        pizzaProducts = updatedProducts.filter { it.type == "1" },
-                        extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
-                        deliveryProducts = updatedProducts.filter { it.type == "4" }
-                    )
-                    val localUser = io { dataUseCase.getUserLocal() }
-                    println("AppViewModel: Sincronización exitosa. Total: ${updatedProducts.size}")
-                    onComplete(localUser!=null)
-                }
-            } catch (e: Exception) {
-                Log.e("AppViewModel", "Error crítico en sincronización: ${e.message}")
-                withContext(dispatchers.main) {
-                    onComplete(false)
-                }
-            }
+        execute(loading = false,globalUiStateManager = globalUiStateManager) {
+
+            dataUseCase.syncProducts()
+            val updatedProducts = dataUseCase.getProducts()
+            orderUiState = orderUiState.copy(
+                products = updatedProducts,
+                pizzaProducts = updatedProducts.filter { it.type == "1" },
+                extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
+                deliveryProducts = updatedProducts.filter { it.type == "4" }
+            )
+            val localUser = io { dataUseCase.getUserLocal() }
+            println("AppViewModel: Sincronización exitosa. Total: ${updatedProducts.size}")
+            onComplete(localUser != null)
+
         }
     }
 

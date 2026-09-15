@@ -27,6 +27,8 @@ import com.valu.uitaycompose.utils.textB20
 import com.valu.uitaycompose.utils.textS12
 import com.valu.uitaycompose.utils.textM14
 
+import com.pizzza.pizzzastore.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BranchScreen(
@@ -50,8 +52,15 @@ fun BranchScreen(
                             .backgroundColor(tay_red_50)
                             .textColor(tay_red_600)
                             .iconColor(tay_red_600)
-                    ) { _ ->
-                        onBack.invoke()
+                            .iconEnd(R.drawable.ic_add)
+                            .showEndIcon(true)
+                    ) { value ->
+                        if (value) {
+                            onBack.invoke()
+                        } else {
+                            viewModel.selectBranch(null)
+                            onNavigateToEdit()
+                        }
                     }
                 }
             }

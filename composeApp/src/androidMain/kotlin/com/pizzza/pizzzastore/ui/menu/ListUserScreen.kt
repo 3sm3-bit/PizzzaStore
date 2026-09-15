@@ -7,27 +7,36 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.repository.network.model.UserResponse
 import com.pizzza.pizzzastore.ui.StoreViewModel
+import com.pizzza.pizzzastore.ui.login.AuthViewModel
+import org.koin.compose.viewmodel.koinViewModel
 import com.valu.uitaycompose.extra.UiTayCToolBar
 import com.valu.uitaycompose.model.UiToolBarModel
 import com.valu.uitaycompose.utils.tay_red_50
 import com.valu.uitaycompose.utils.tay_red_600
+import com.pizzza.pizzzastore.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListUserScreen(
     viewModel: StoreViewModel,
-    onBack: () -> Unit
+    authViewModel: AuthViewModel = koinViewModel(),
+    onBack: () -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     val uiState = viewModel.storeUiState
 
@@ -41,8 +50,16 @@ fun ListUserScreen(
                             .backgroundColor(tay_red_50)
                             .textColor(tay_red_600)
                             .iconColor(tay_red_600)
-                    ) { _ ->
-                        onBack.invoke()
+                            .iconEnd(R.drawable.ic_add)
+                            .showEndIcon(true)
+                    ) { value ->
+                        if(value){
+                            onBack.invoke()
+
+                        }else{
+                            authViewModel.selectUser(null)
+                            onNavigateToRegister.invoke()
+                        }
                     }
                 }
             }
@@ -82,7 +99,19 @@ fun ListUserScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(uiState.filteredUsers) { user ->
-                    UserItem(user)
+                    val context = LocalContext.current
+                    UserItem(
+                        user = user,
+                        onClick = {
+                            authViewModel.selectUser(user)
+                            onNavigateToRegister()
+                        },
+                        onDelete = {
+                            viewModel.deleteUser(user.uid ?: "") {
+                                Toast.makeText(context, "Usuario eliminado", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -111,8 +140,9 @@ fun FilterButton(
 }
 
 @Composable
-fun UserItem(user: UserResponse) {
+fun UserItem(user: UserResponse, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -139,7 +169,7 @@ fun UserItem(user: UserResponse) {
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = user.nameUser ?: "Sin nombre",
                     fontSize = 18.sp,
@@ -150,6 +180,14 @@ fun UserItem(user: UserResponse) {
                     text = user.rol ?: "Sin rol",
                     fontSize = 14.sp,
                     color = Color.Gray
+                )
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar",
+                    tint = Color.Red
                 )
             }
         }

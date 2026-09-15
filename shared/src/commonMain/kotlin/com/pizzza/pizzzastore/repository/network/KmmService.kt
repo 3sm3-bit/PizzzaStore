@@ -13,6 +13,7 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
+import io.ktor.client.request.delete
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -64,12 +65,30 @@ class KmmService(private val client: HttpClient) {
         }.body()
     }
 
+    suspend fun addProduct(request: ProductResponse): String {
+        return client.post("${BASE_URL}/pizzzeria/products") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun deleteProduct(id: String): String {
+        return client.delete("${BASE_URL}/pizzzeria/products/$id").bodyAsText()
+    }
+
     suspend fun getBranches(): List<BranchResponse> {
         return client.get("${BASE_URL}/pizzzeria/branch").body()
     }
 
     suspend fun updateBranch(request: BranchResponse): String {
         return client.put("${BASE_URL}/pizzzeria/branch/${request.uid}") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun addBranch(request: BranchResponse): String {
+        return client.post("${BASE_URL}/pizzzeria/branch") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()
@@ -86,6 +105,11 @@ class KmmService(private val client: HttpClient) {
         return client.get("${BASE_URL}/services/user").body()
     }
 
+    suspend fun deleteUser(id: String): String {
+        return client.delete("${BASE_URL}/services/user/$id").bodyAsText()
+    }
+
+
     suspend fun registerUser(request: UserResponse): String {
         println("KmmService: Enviando registro para ${request.email}...")
         val response = client.post("${BASE_URL}/services/user") {
@@ -95,6 +119,15 @@ class KmmService(private val client: HttpClient) {
         val result = response.bodyAsText()
         println("KmmService: Respuesta recibida (Status: ${response.status}): $result")
         return result
+    }
+
+    suspend fun updateUser(request: UserResponse): String {
+        println("KmmService: Actualizando usuario ${request.uid}...")
+        val response = client.put("${BASE_URL}/services/user") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        return response.bodyAsText()
     }
 
     suspend fun login(request: LoginRequest): LoginResponse {

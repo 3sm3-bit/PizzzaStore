@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.ui.StoreViewModel
@@ -32,6 +35,7 @@ fun ProductScreen(
     onBack: () -> Unit
 ) {
     val uiState = viewModel.storeUiState
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.getProductsList()
@@ -148,6 +152,21 @@ fun ProductScreen(
                                         style = textB18,
                                         color = Color(0xFF10B981)
                                     )
+
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.deleteProduct(product.uid) {
+                                                Toast.makeText(context, "Producto eliminado", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Eliminar",
+                                            tint = Color.Red
+                                        )
+                                    }
                                 }
                             }
                         }

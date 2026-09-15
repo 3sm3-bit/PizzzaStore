@@ -31,6 +31,9 @@ object EditOtherProduct
 object Branches
 
 @Serializable
+object CreateProduct
+
+@Serializable
 object ConfigNoti
 
 @Serializable
@@ -38,4 +41,11 @@ object EditBranch
 
 @Serializable
 object ListUser
+
+@Serializable
+data class Address(
+    val initialLat: String? = null,
+    val initialLng: String? = null,
+    val initialAddress: String? = null
+)
 

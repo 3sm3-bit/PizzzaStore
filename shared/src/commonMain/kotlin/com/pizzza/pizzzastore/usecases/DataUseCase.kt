@@ -21,15 +21,25 @@ class DataUseCase(private val iDataNetwork: IDataNetwork) {
 
     suspend fun updateProduct(data: ProductModel) = iDataNetwork.updateProduct(data)
 
+    suspend fun addProduct(data: ProductModel) = iDataNetwork.addProduct(data)
+
+    suspend fun deleteProduct(id: String) = iDataNetwork.deleteProduct(id)
+
     suspend fun uploadProductImage(image: ByteArray) = iDataNetwork.uploadProductImage(image)
 
     suspend fun getBranches() = iDataNetwork.getBranches()
 
     suspend fun updateBranch(data: BranchModel) = iDataNetwork.updateBranch(data)
 
+    suspend fun addBranch(data: BranchModel) = iDataNetwork.addBranch(data)
+
     suspend fun getUsers() = iDataNetwork.getUsers()
 
+    suspend fun deleteUser(id: String) = iDataNetwork.deleteUser(id)
+
     suspend fun registerUser(data: UserResponse) = iDataNetwork.registerUser(data)
+
+    suspend fun updateUser(data: UserResponse) = iDataNetwork.updateUser(data)
 
     suspend fun login(data: com.pizzza.pizzzastore.repository.network.model.LoginRequest) = iDataNetwork.login(data)
 

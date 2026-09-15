@@ -15,5 +15,8 @@ data class AuthUiState(
     val rol: String = "CLIENTE",
     val area: String = "1",
     val longitude: String = "",
-    val latitude: String = ""
-)
+    val latitude: String = "",
+    val selectedUser: com.pizzza.pizzzastore.repository.network.model.UserResponse? = null
+) {
+    val isEditMode: Boolean get() = selectedUser != null
+}

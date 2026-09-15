@@ -1,89 +1,64 @@
 package com.pizzza.pizzzastore.ui.products
 
-import androidx.compose.foundation.Image
+import android.graphics.Bitmap
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.pizzza.pizzzastore.model.ProductModel
 import com.pizzza.pizzzastore.ui.StoreViewModel
-import com.valu.uitaycompose.utils.textB20
-import com.valu.uitaycompose.utils.permission.rememberUiTayCameraManager
-import com.valu.uitaycompose.utils.permission.UiTayCameraManagerCompose
-import android.graphics.Bitmap
-import com.valu.uitaycompose.swipe.UiTayUrlImage
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.text.input.ImeAction
 import com.valu.uitaycompose.button.UiTayButton
 import com.valu.uitaycompose.extra.UiTayCToolBar
 import com.valu.uitaycompose.label.UiTayEditLayout
 import com.valu.uitaycompose.model.UiEditLayoutModel
 import com.valu.uitaycompose.model.UiTayButtonModel
 import com.valu.uitaycompose.model.UiToolBarModel
-import com.valu.uitaycompose.utils.tay_green_600
-import com.valu.uitaycompose.utils.tay_red_50
-import com.valu.uitaycompose.utils.tay_red_600
-import com.valu.uitaycompose.utils.textB12
-import com.valu.uitaycompose.utils.textB14
-import com.valu.uitaycompose.utils.textM10
-import com.valu.uitaycompose.utils.textM12
-import com.valu.uitaycompose.utils.textM14
+import com.valu.uitaycompose.utils.*
+import com.valu.uitaycompose.utils.permission.UiTayCameraManagerCompose
+import com.valu.uitaycompose.utils.permission.rememberUiTayCameraManager
 import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditPizzaScreen(
+fun CreateProductScreen(
     viewModel: StoreViewModel,
     onBack: () -> Unit
 ) {
-    val product = viewModel.storeUiState.selectedProduct ?: return
-
-    var name by remember { mutableStateOf(product.nameProduct) }
-    var price by remember { mutableStateOf(product.price) }
-    var description by remember { mutableStateOf(product.description) }
-    var priceChosse by remember { mutableStateOf(product.priceChosse) }
-    var tamanioState by remember { mutableStateOf(product.tamanio) }
-    var currency by remember { mutableStateOf(product.currency) }
-    var currencySymbol by remember { mutableStateOf(product.currencySymbol) }
-    var stateAvailable by remember { mutableStateOf(product.state) }
-    var urlImg by remember { mutableStateOf(product.urlImg) }
+    var name by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf("1") } // Default to Pizza
+    var price by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var priceChosse by remember { mutableStateOf("") } // Precio orilla de queso
+    var tamanio by remember { mutableStateOf("GRANDE") } // Tamaño
+    var currency by remember { mutableStateOf("MXN") }
+    var currencySymbol by remember { mutableStateOf("$") }
+    var stateAvailable by remember { mutableStateOf(true) }
     var productBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var selectedImageBytes by remember { mutableStateOf<ByteArray?>(null) }
-    var showUrlImage by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        showUrlImage = true
-    }
 
     val cameraManager = rememberUiTayCameraManager(
-        uiTayNameFilePath = "product",
+        uiTayNameFilePath = "product_new",
         listener = object : UiTayCameraManagerCompose.CameraControllerListener {
             override fun onCameraPermissionDenied() {
-                android.util.Log.w("EditPizzaScreen", "Camera permission denied")
             }
 
             override fun onGetImageCameraCompleted(path: String, img: Bitmap) {
                 productBitmap = img.asImageBitmap()
-                
-                // Guardar los bytes localmente en lugar de subir inmediatamente
                 val stream = ByteArrayOutputStream()
                 img.compress(Bitmap.CompressFormat.JPEG, 80, stream)
                 selectedImageBytes = stream.toByteArray()
-                println("EditPizzaScreen: Imagen capturada y guardada en memoria (Bytes: ${selectedImageBytes?.size})")
             }
         }
     )
@@ -93,7 +68,7 @@ fun EditPizzaScreen(
             Surface(color = tay_red_50) {
                 Box(modifier = Modifier.statusBarsPadding()) {
                     UiTayCToolBar(
-                        uiTayText = "Editar Pizza",
+                        uiTayText = "Crear Nuevo Producto",
                         uiTayModifier = UiToolBarModel()
                             .backgroundColor(tay_red_50)
                             .textColor(tay_red_600)
@@ -126,7 +101,8 @@ fun EditPizzaScreen(
                 Card(
                     modifier = Modifier.weight(1f).height(150.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, Color.LightGray)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (productBitmap != null) {
@@ -136,14 +112,9 @@ fun EditPizzaScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                        } else if (urlImg.isNotBlank() && showUrlImage) {
-                            UiTayUrlImage(
-                                url = urlImg,
-                                modifier = Modifier.fillMaxSize()
-                            )
                         } else {
                             Icon(
-                                imageVector = Icons.Default.Save, // Placeholder
+                                imageVector = Icons.Default.Save,
                                 contentDescription = null,
                                 modifier = Modifier.size(48.dp),
                                 tint = Color.Gray
@@ -157,12 +128,12 @@ fun EditPizzaScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { cameraManager.doCamera("product_img") },
+                        onClick = { cameraManager.doCamera("new_product_img") },
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Cambiar Imagen")
+                        Text("Tomar Foto")
                     }
 
                     Row(
@@ -170,22 +141,39 @@ fun EditPizzaScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("DISPONIBLE", style = textB12,
-                                color = tay_green_600)
-                        }
+                        Text("DISPONIBLE", style = textB12, color = tay_green_600)
                         Switch(
                             checked = stateAvailable,
                             onCheckedChange = { stateAvailable = it },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
-                                checkedTrackColor = tay_green_600,
-                                uncheckedThumbColor = Color.White,
-                                uncheckedTrackColor = Color(0xFFDDDFE2),
-                                uncheckedBorderColor = Color.Transparent
+                                checkedTrackColor = tay_green_600
                             ),
                             modifier = Modifier.scale(0.7f)
                         )
+                    }
+                }
+            }
+
+            // Categoría
+            Column {
+                Text("Categoría", style = textB14, color = tay_red_600)
+                val categoryList = listOf("Pizza" to "1", "Adicionales" to "2", "Bebida" to "3", "Promociones" to "4")
+                categoryList.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth()) {
+                        row.forEach { (label, value) ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f).clickable { type = value }
+                            ) {
+                                RadioButton(
+                                    selected = type == value,
+                                    onClick = { type = value },
+                                    colors = RadioButtonDefaults.colors(selectedColor = tay_red_600)
+                                )
+                                Text(label, style = textM12, color = Color.Black)
+                            }
+                        }
                     }
                 }
             }
@@ -194,7 +182,7 @@ fun EditPizzaScreen(
                 value = name,
                 onValueChange = { name = it },
                 hint = "Nombre del Producto",
-                imeAction = ImeAction.Done,
+                imeAction = ImeAction.Next,
                 model = UiEditLayoutModel(
                     uiStrokeActiveColor = tay_red_600,
                     uiTextColor = tay_red_600,
@@ -213,28 +201,63 @@ fun EditPizzaScreen(
                 minLines = 3
             )
 
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (type == "1") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Tamaño", style = textB14, color = tay_red_600)
+                    Row(Modifier.fillMaxWidth()) {
+                        listOf("CHICA", "MEDIANA", "GRANDE").forEach { size ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f).clickable { tamanio = size }
+                            ) {
+                                RadioButton(
+                                    selected = tamanio == size,
+                                    onClick = { tamanio = size },
+                                    colors = RadioButtonDefaults.colors(selectedColor = tay_red_600)
+                                )
+                                Text(size, style = textM12, color = Color.Black)
+                            }
+                        }
+                    }
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        UiTayEditLayout(
+                            modifier = Modifier.weight(1f),
+                            value = price,
+                            onValueChange = { price = it },
+                            hint = "Precio Pizza",
+                            imeAction = ImeAction.Next,
+                            model = UiEditLayoutModel(
+                                uiStrokeActiveColor = tay_red_600,
+                                uiTextColor = tay_red_600,
+                                uiTextActiveColor = tay_red_600,
+                                uiTitleActiveColor = tay_red_600,
+                                uiTextFont = textM14,
+                                uiTitleFont = textM14
+                            )
+                        )
+                        UiTayEditLayout(
+                            modifier = Modifier.weight(1f),
+                            value = priceChosse,
+                            onValueChange = { priceChosse = it },
+                            hint = "Precio Orilla Queso",
+                            imeAction = ImeAction.Done,
+                            model = UiEditLayoutModel(
+                                uiStrokeActiveColor = tay_red_600,
+                                uiTextColor = tay_red_600,
+                                uiTextActiveColor = tay_red_600,
+                                uiTitleActiveColor = tay_red_600,
+                                uiTextFont = textM14,
+                                uiTitleFont = textM14
+                            )
+                        )
+                    }
+                }
+            } else {
                 UiTayEditLayout(
-                    modifier = Modifier.weight(1f),
                     value = price,
                     onValueChange = { price = it },
                     hint = "Precio",
-                    imeAction = ImeAction.Done,
-                    model = UiEditLayoutModel(
-                        uiStrokeActiveColor = tay_red_600,
-                        uiTextColor = tay_red_600,
-                        uiTextActiveColor = tay_red_600,
-                        uiTitleActiveColor = tay_red_600,
-                        uiTextFont = textM14,
-                        uiTitleFont = textM14
-                    )
-                )
-                UiTayEditLayout(
-                    modifier = Modifier.weight(1f),
-                    value = priceChosse,
-                    onValueChange = { priceChosse = it },
-                    hint = "Precio/O.Queso",
                     imeAction = ImeAction.Done,
                     model = UiEditLayoutModel(
                         uiStrokeActiveColor = tay_red_600,
@@ -263,7 +286,6 @@ fun EditPizzaScreen(
                         uiTitleFont = textM14
                     )
                 )
-
                 UiTayEditLayout(
                     modifier = Modifier.weight(1f),
                     value = currencySymbol,
@@ -281,42 +303,26 @@ fun EditPizzaScreen(
                 )
             }
 
-            // Tamaño
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Tamaño", style = textB14, color = tay_red_600)
-                Row(Modifier.fillMaxWidth()) {
-                    listOf("CHICA", "MEDIANA", "GRANDE").forEach { size ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f).clickable { tamanioState = size }
-                        ) {
-                            RadioButton(
-                                selected = tamanioState == size,
-                                onClick = { tamanioState = size },
-                                colors = RadioButtonDefaults.colors(selectedColor = tay_red_600)
-                            )
-                            Text(size, style = textM12, color = Color.Black)
-                        }
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
+            
             UiTayButton(
-                uiTayText = "Guardar Cambios",
+                uiTayText = "Crear Producto",
+                uiTayEnable = name.isNotBlank() && price.isNotBlank(),
                 uiTayClick = {
-                    val updatedProduct = product.copy(
+                    val newProduct = ProductModel(
                         nameProduct = name,
+                        type = type,
                         price = price,
-                        tamanio = tamanioState,
+                        tamanio = if (type == "1") tamanio else "",
                         description = description,
-                        priceChosse = priceChosse,
+                        priceChosse = if (type == "1") priceChosse else "",
                         currency = currency,
                         currencySymbol = currencySymbol,
                         state = stateAvailable,
-                        urlImg = urlImg
+                        urlImg = "",
+                        uid = "" // Server generates this
                     )
-                    viewModel.updateProduct(updatedProduct, selectedImageBytes) {
+                    viewModel.createProduct(newProduct, selectedImageBytes) {
                         onBack()
                     }
                 },

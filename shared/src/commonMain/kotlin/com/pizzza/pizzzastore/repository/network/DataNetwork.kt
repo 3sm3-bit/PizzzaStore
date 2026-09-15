@@ -66,10 +66,28 @@ class DataNetwork(
         apiService.updateBranch(data.toResponse())
     }
 
+    override suspend fun addBranch(data: BranchModel): String = apiCall {
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Creando sucursal...")
+        apiService.addBranch(data.toResponse())
+    }
+
     override suspend fun updateProduct(data: ProductModel): String = apiCall {
         if (!connectivityManager.isConnected()) throw ErrorNetwork()
         println("DataNetwork: Actualizando producto ${data.uid}...")
         apiService.updateProduct(data.toResponse())
+    }
+
+    override suspend fun addProduct(data: ProductModel): String = apiCall {
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Creando nuevo producto...")
+        apiService.addProduct(data.toResponse())
+    }
+
+    override suspend fun deleteProduct(id: String): String = apiCall {
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Eliminando producto $id...")
+        apiService.deleteProduct(id)
     }
 
     override suspend fun uploadProductImage(image: ByteArray): String = apiCall({
@@ -144,10 +162,22 @@ class DataNetwork(
         apiService.getUsers()
     }) { it }
 
+    override suspend fun deleteUser(id: String): String = apiCall {
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Eliminando usuario $id...")
+        apiService.deleteUser(id)
+    }
+
     override suspend fun registerUser(data: UserResponse): String = apiCall {
         if (!connectivityManager.isConnected()) throw ErrorNetwork()
         println("DataNetwork: Registrando usuario ${data.email}...")
         apiService.registerUser(data)
+    }
+
+    override suspend fun updateUser(data: UserResponse): String = apiCall {
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Actualizando usuario ${data.uid}...")
+        apiService.updateUser(data)
     }
 
     override suspend fun login(data: com.pizzza.pizzzastore.repository.network.model.LoginRequest): com.pizzza.pizzzastore.repository.network.model.LoginResponse = apiCall {

@@ -1,20 +1,19 @@
 package com.pizzza.pizzzastore.ui
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.pizzza.pizzzastore.DispatcherProvider
-import com.pizzza.pizzzastore.model.ProductModel
 import com.pizzza.pizzzastore.model.BranchModel
+import com.pizzza.pizzzastore.model.ProductModel
 import com.pizzza.pizzzastore.ui.base.BaseViewModel
+import com.pizzza.pizzzastore.ui.base.GlobalUiStateManager
 import com.pizzza.pizzzastore.ui.orders.OrderUiState
 import com.pizzza.pizzzastore.usecases.DataUseCase
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineDispatcher
 
 class StoreViewModel(
     private val dataUseCase: DataUseCase,
-    private val dispatchers: DispatcherProvider
+    private val globalUiStateManager: GlobalUiStateManager,
 ) : BaseViewModel() {
 
     var storeUiState by mutableStateOf(OrderUiState())
@@ -22,90 +21,98 @@ class StoreViewModel(
 
     fun getProductsList() {
         val hasData = storeUiState.products.isNotEmpty()
-        execute(loading = !hasData) {
-            try {
-                val response = dataUseCase.getProducts()
-                withContext(dispatchers.main) {
-                    storeUiState = storeUiState.copy(
-                        products = response,
-                        pizzaProducts = response.filter { it.type == "1" },
-                        extraProducts = response.filter { it.type == "2" || it.type == "3" },
-                        deliveryProducts = response.filter { it.type == "4" }
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("StoreViewModel", "Error en getProductsList: ${e.message}", e)
-                throw e
-            }
+        execute(loading = !hasData, globalUiStateManager = globalUiStateManager) {
+            fetchProducts()
         }
+    }
+
+    suspend fun fetchProducts() {
+        val response = dataUseCase.syncProducts()
+        storeUiState = storeUiState.copy(
+            products = response,
+            pizzaProducts = response.filter { it.type == "1" },
+            extraProducts = response.filter { it.type == "2" || it.type == "3" },
+            deliveryProducts = response.filter { it.type == "4" }
+        )
     }
 
     fun getBranchesList() {
         val hasData = storeUiState.branches.isNotEmpty()
-        execute(loading = !hasData) {
-            try {
-                val response = dataUseCase.getBranches()
-                withContext(dispatchers.main) {
-                    storeUiState = storeUiState.copy(branches = response)
-                }
-            } catch (e: Exception) {
-                Log.e("StoreViewModel", "Error en getBranchesList: ${e.message}", e)
-                throw e
-            }
+        execute(loading = !hasData, globalUiStateManager = globalUiStateManager) {
+            fetchBranches()
         }
     }
 
-    fun updateProduct(product: ProductModel, imageBytes: ByteArray? = null, onSuccess: () -> Unit) {
-        execute {
-            try {
-                var productToUpdate = product
-                
-                // Si hay una nueva imagen, primero la subimos
-                if (imageBytes != null) {
-                    println("StoreViewModel: Subiendo nueva imagen antes de actualizar producto...")
-                    val newUrl = dataUseCase.uploadProductImage(imageBytes)
-                    productToUpdate = product.copy(urlImg = newUrl)
-                    println("StoreViewModel: Imagen subida con éxito. Nueva URL: $newUrl")
-                }
+    suspend fun fetchBranches() {
+        val response = dataUseCase.getBranches()
+        storeUiState = storeUiState.copy(branches = response)
+    }
 
-                dataUseCase.updateProduct(productToUpdate)
-                getProductsList()
-                withContext(dispatchers.main) {
-                    onSuccess()
-                }
-            } catch (e: Exception) {
-                Log.e("StoreViewModel", "Error al actualizar producto: ${e.message}", e)
-                throw e
+    fun updateProduct(product: ProductModel, imageBytes: ByteArray? = null, onSuccess: () -> Unit) {
+        execute(globalUiStateManager = globalUiStateManager) {
+
+            var productToUpdate = product
+
+            // Si hay una nueva imagen, primero la subimos
+            if (imageBytes != null) {
+                println("StoreViewModel: Subiendo nueva imagen antes de actualizar producto...")
+                val newUrl = dataUseCase.uploadProductImage(imageBytes)
+                productToUpdate = product.copy(urlImg = newUrl)
+                println("StoreViewModel: Imagen subida con éxito. Nueva URL: $newUrl")
             }
+
+            dataUseCase.updateProduct(productToUpdate)
+            fetchProducts()
+            onSuccess()
+
+        }
+    }
+
+    fun deleteProduct(id: String, onSuccess: () -> Unit) {
+        execute(loading = true, globalUiStateManager = globalUiStateManager) {
+            dataUseCase.deleteProduct(id)
+            fetchProducts()
+            onSuccess()
+        }
+    }
+
+    fun createProduct(product: ProductModel, imageBytes: ByteArray? = null, onSuccess: () -> Unit) {
+        execute(globalUiStateManager = globalUiStateManager) {
+            var productToCreate = product
+
+            if (imageBytes != null) {
+                println("StoreViewModel: Subiendo imagen para nuevo producto...")
+                val newUrl = dataUseCase.uploadProductImage(imageBytes)
+                productToCreate = product.copy(urlImg = newUrl)
+            }
+
+            dataUseCase.addProduct(productToCreate)
+            fetchProducts()
+            onSuccess()
         }
     }
 
     fun updateBranch(branch: BranchModel, onSuccess: () -> Unit) {
-        execute {
-            try {
-                dataUseCase.updateBranch(branch)
-                getBranchesList()
-                withContext(dispatchers.main) {
-                    onSuccess()
-                }
-            } catch (e: Exception) {
-                Log.e("StoreViewModel", "Error al actualizar sucursal: ${e.message}", e)
-                throw e
-            }
+        execute(globalUiStateManager = globalUiStateManager) {
+            dataUseCase.updateBranch(branch)
+            fetchBranches()
+            onSuccess()
+
+        }
+    }
+
+    fun createBranch(branch: BranchModel, onSuccess: () -> Unit) {
+        execute(globalUiStateManager = globalUiStateManager) {
+            dataUseCase.addBranch(branch)
+            fetchBranches()
+            onSuccess()
         }
     }
 
     fun uploadProductImage(image: ByteArray, onSuccess: (String) -> Unit) {
         execute {
-            try {
                 val url = dataUseCase.uploadProductImage(image)
-                withContext(dispatchers.main) {
                     onSuccess(url)
-                }
-            } catch (e: Exception) {
-                Log.e("StoreViewModel", "Error al subir imagen: ${e.message}", e)
-                throw e
-            }
         }
     }
 
@@ -114,19 +121,25 @@ class StoreViewModel(
     }
 
     fun getUsersList() {
-        execute(loading = true) {
-            try {
-                val response = dataUseCase.getUsers()
-                withContext(dispatchers.main) {
-                    storeUiState = storeUiState.copy(
-                        users = response,
-                        filteredUsers = filterUsers(response, storeUiState.userFilter)
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("StoreViewModel", "Error al obtener usuarios: ${e.message}", e)
-                throw e
-            }
+        execute(loading = true, globalUiStateManager = globalUiStateManager) {
+            fetchUsers()
+        }
+    }
+
+    suspend fun fetchUsers() {
+        val response = dataUseCase.getUsers()
+
+        storeUiState = storeUiState.copy(
+            users = response,
+            filteredUsers = filterUsers(response, storeUiState.userFilter)
+        )
+    }
+
+    fun deleteUser(id: String, onSuccess: () -> Unit) {
+        execute(loading = true, globalUiStateManager = globalUiStateManager) {
+            dataUseCase.deleteUser(id)
+            fetchUsers()
+            onSuccess()
         }
     }
 
