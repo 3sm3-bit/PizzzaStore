@@ -69,8 +69,8 @@ fun SplashScreen(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            Image(painter = painterResource(R.drawable.ic_logo_m_pizzzeria)
-                , contentDescription = "null",modifier = Modifier.width(250.dp).height(200.dp))
+            Image(painter = painterResource(R.drawable.ic_logo_store_new)
+                , contentDescription = "null",modifier = Modifier.width(250.dp).height(250.dp))
 
             Spacer(Modifier.height(60.dp))
 
