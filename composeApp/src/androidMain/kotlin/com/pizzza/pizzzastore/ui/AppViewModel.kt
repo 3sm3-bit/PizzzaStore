@@ -58,7 +58,9 @@ class AppViewModel(
             try {
                 val response = dataUseCase.loadParentOrder()
                 updateStateWithOrders(response)
+                orderUiState = orderUiState.copy(isInitialLoaded = true)
             } catch (e: Exception) {
+                orderUiState = orderUiState.copy(isInitialLoaded = true)
                 Log.e("AppViewModel", "Error en getGeneralOrderList: ${e.message}", e)
                 throw e
             }
@@ -91,23 +93,33 @@ class AppViewModel(
         val countEntregado = orders.count { it.state.trim().uppercase() == "ENTREGADO" }
         val countPendientes = orders.size - countEntregado
 
+        // Mantener o aplicar el filtro actual ("PENDIENTES" por defecto si es TODOS o vacío)
+        val targetFilter = if (orderUiState.selectedFilter == "TODOS") "PENDIENTES" else orderUiState.selectedFilter
+
+        val filtered = if (targetFilter == "ENTREGADO") {
+            sortedOrders.filter { it.state.trim().uppercase() == "ENTREGADO" }
+        } else {
+            sortedOrders.filter { it.state.trim().uppercase() != "ENTREGADO" }
+        }
+
         orderUiState = orderUiState.copy(
             orders = sortedOrders,
-            filteredOrders = sortedOrders, // Mostramos todos por defecto
+            filteredOrders = filtered,
+            selectedFilter = targetFilter,
             countPendientes = countPendientes,
             countEntregado = countEntregado
         )
     }
 
     fun applyFilter(filter: String) {
-        val filtered = if (filter == "TODOS") {
-            orderUiState.orders
+        val filtered = if (filter.uppercase() == "ENTREGADO") {
+            orderUiState.orders.filter { it.state.trim().uppercase() == "ENTREGADO" }
         } else {
-            orderUiState.orders.filter { it.state.trim().uppercase() == filter.uppercase() }
+            orderUiState.orders.filter { it.state.trim().uppercase() != "ENTREGADO" }
         }
         orderUiState = orderUiState.copy(
             filteredOrders = filtered,
-            selectedFilter = filter
+            selectedFilter = filter.uppercase()
         )
     }
 

@@ -8,6 +8,7 @@ data class OrderUiState(
     val orders: List<ParentOrderModel> = emptyList(),
     val filteredOrders: List<ParentOrderModel> = emptyList(),
     val selectedFilter: String = "TODOS",
+    val isInitialLoaded: Boolean = false,
     val countPendientes: Int = 0,
     val countEntregado: Int = 0,
     val selectedOrder: ParentOrderModel? = null,

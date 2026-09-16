@@ -61,8 +61,12 @@ fun OrderScreen(
         showSheet = uiState.selectedOrder != null
     }
 
+    // Usamos isInitialLoaded para evitar el consumo repetitivo en cada giro de pantalla
+    // independientemente de si hay pedidos o no (casos con 0 registros).
     LaunchedEffect(Unit) {
-        viewModel.getGeneralOrderList()
+        if (!uiState.isInitialLoaded) {
+            viewModel.getGeneralOrderList()
+        }
     }
 
     Scaffold(
@@ -141,7 +145,7 @@ fun OrderScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Indicadores de estado (Resumen)
+                // Indicadores de estado (Resumen con comportamiento de Botón)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -151,6 +155,8 @@ fun OrderScreen(
                         text = "PENDIENTES",
                         count = uiState.countPendientes,
                         color = Color(0xFF3B82F6),
+                        selected = uiState.selectedFilter != "ENTREGADO",
+                        onClick = { viewModel.applyFilter("PENDIENTES") },
                         modifier = Modifier.weight(1f)
                     )
 
@@ -174,9 +180,11 @@ fun OrderScreen(
                     }
 
                     StatusIndicator(
-                        text = "ENTREGADO",
+                        text = "ENTREGADOS",
                         count = uiState.countEntregado,
                         color = Color(0xFF10B981),
+                        selected = uiState.selectedFilter == "ENTREGADO",
+                        onClick = { viewModel.applyFilter("ENTREGADO") },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -189,7 +197,7 @@ fun OrderScreen(
                         contentPadding = PaddingValues(bottom = 80.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(uiState.orders) { order ->
+                        items(uiState.filteredOrders) { order ->
                             OrderCard(
                                 order = order,
                                 backgroundColor = Color.White,
@@ -495,11 +503,15 @@ fun StatusIndicator(
     text: String,
     count: Int,
     color: Color,
+    selected: Boolean = false,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = color,
+        color = if (selected) color else Color.White,
         shape = RoundedCornerShape(12.dp),
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFDDDFE2)),
+        onClick = onClick,
         modifier = modifier.height(40.dp)
     ) {
         Row(
@@ -510,18 +522,18 @@ fun StatusIndicator(
             Text(
                 text = text,
                 style = textB10,
-                color = Color.White.copy(alpha = 0.9f)
+                color = if (selected) Color.White else Color(0xFF1C1E21)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Surface(
-                color = Color.White.copy(alpha = 0.2f),
+                color = if (selected) Color.White.copy(alpha = 0.2f) else color.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(6.dp)
             ) {
                 Text(
                     text = count.toString(),
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                     style = textB12,
-                    color = Color.White
+                    color = if (selected) Color.White else color
                 )
             }
         }
