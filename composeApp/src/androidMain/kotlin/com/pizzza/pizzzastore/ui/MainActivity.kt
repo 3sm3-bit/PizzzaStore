@@ -59,12 +59,14 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setDataGlobal() {
-        // Cargar el ID de sucursal guardado (default "1")
-        val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
-        viewModel.setInitialSelectedBranchId(savedBranchId)
-        observeSocketForRefresh()
-        observeSessionChanges()
-        observeBranchIdChanges()
+        // Ejecutar la inicialización fuera del hilo principal usando lifecycleScope
+        lifecycleScope.launch {
+            val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
+            viewModel.setInitialSelectedBranchId(savedBranchId)
+            observeSocketForRefresh()
+            observeSessionChanges()
+            observeBranchIdChanges()
+        }
     }
 
     private fun observeSessionChanges() {

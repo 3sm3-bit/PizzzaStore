@@ -40,11 +40,8 @@ class AppViewModel(
             }
         }
 
-        loadUserRole()
-    }
-
-    fun loadUserRole() {
-        viewModelScope.launch {
+        // Cambiar a corrutina asíncrona segura
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val user = dataUseCase.getUserLocal()
             orderUiState = orderUiState.copy(userRole = user?.rol)
             Log.d("AppViewModel", "🍕 Rol de usuario cargado: ${user?.rol}")
@@ -53,15 +50,32 @@ class AppViewModel(
 
     fun getGeneralOrderList() {
         if (orderUiState.isInitialLoaded) return
+        
+        // Verificación de seguridad adicional: no llamar a la API si no hay sesión iniciada en la app
+        if (orderUiState.userRole == null) {
+            viewModelScope.launch {
+                val user = dataUseCase.getUserLocal()
+                if (user == null) {
+                    Log.d("AppViewModel", "getGeneralOrderList omitido: Sin sesión en base de datos local")
+                    return@launch
+                } else {
+                    orderUiState = orderUiState.copy(userRole = user.rol)
+                    proceedToLoadOrders()
+                }
+            }
+        } else {
+            proceedToLoadOrders()
+        }
+    }
+
+    private fun proceedToLoadOrders() {
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
-        loadUserRole()
         execute(globalUiStateManager = globalUiStateManager) {
             try {
                 val response = dataUseCase.loadParentOrder()
                 updateStateWithOrders(response)
                 orderUiState = orderUiState.copy(isInitialLoaded = true)
             } catch (e: Exception) {
-                // Si hay un error, no marcamos como cargado para permitir reintento manual
                 Log.e("AppViewModel", "Error en getGeneralOrderList: ${e.message}", e)
                 throw e
             }
@@ -191,19 +205,22 @@ class AppViewModel(
 
     fun syncProducts(onComplete: (Boolean) -> Unit = {}) {
         execute(loading = false,globalUiStateManager = globalUiStateManager) {
-
-            dataUseCase.syncProducts()
-            val updatedProducts = dataUseCase.getProducts()
-            orderUiState = orderUiState.copy(
-                products = updatedProducts,
-                pizzaProducts = updatedProducts.filter { it.type == "1" },
-                extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
-                deliveryProducts = updatedProducts.filter { it.type == "4" }
-            )
-            val localUser = io { dataUseCase.getUserLocal() }
-            println("AppViewModel: Sincronización exitosa. Total: ${updatedProducts.size}")
-            onComplete(localUser != null)
-
+            try {
+                dataUseCase.syncProducts()
+                val updatedProducts = dataUseCase.getProducts()
+                orderUiState = orderUiState.copy(
+                    products = updatedProducts,
+                    pizzaProducts = updatedProducts.filter { it.type == "1" },
+                    extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
+                    deliveryProducts = updatedProducts.filter { it.type == "4" }
+                )
+            } catch (e: Exception) {
+                Log.e("AppViewModel", "Error al sincronizar productos en Splash: ${e.message}")
+            } finally {
+                val localUser = io { dataUseCase.getUserLocal() }
+                println("AppViewModel: Sincronización finalizada. Total: ${orderUiState.products.size}")
+                onComplete(localUser != null)
+            }
         }
     }
 
