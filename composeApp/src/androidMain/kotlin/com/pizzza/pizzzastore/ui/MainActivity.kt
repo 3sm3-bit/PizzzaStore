@@ -123,7 +123,9 @@ class MainActivity : BaseActivity() {
         webSocketManager.notifications
             .onEach {
                 println("🍕 MainActivity - Notificación recibida para refrescar lista")
-                viewModel.getGeneralOrderList()
+                // En lugar de llamar getGeneralOrderList() que ahora tiene bloqueo,
+                // llamamos a refresh() que limpia caché y fuerza la actualización real por socket.
+                viewModel.refresh()
             }
             .launchIn(lifecycleScope)
     }

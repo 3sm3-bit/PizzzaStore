@@ -52,6 +52,7 @@ class AppViewModel(
     }
 
     fun getGeneralOrderList() {
+        if (orderUiState.isInitialLoaded) return
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
         loadUserRole()
         execute(globalUiStateManager = globalUiStateManager) {
@@ -60,7 +61,7 @@ class AppViewModel(
                 updateStateWithOrders(response)
                 orderUiState = orderUiState.copy(isInitialLoaded = true)
             } catch (e: Exception) {
-                orderUiState = orderUiState.copy(isInitialLoaded = true)
+                // Si hay un error, no marcamos como cargado para permitir reintento manual
                 Log.e("AppViewModel", "Error en getGeneralOrderList: ${e.message}", e)
                 throw e
             }

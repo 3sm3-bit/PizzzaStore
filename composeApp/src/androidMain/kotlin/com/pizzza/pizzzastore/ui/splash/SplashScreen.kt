@@ -3,6 +3,7 @@ package com.pizzza.pizzzastore.ui.splash
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.R
@@ -64,11 +67,8 @@ fun SplashScreen(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-            UiTayGif(
-                resId = R.drawable.ui_ani_logo,
-                width = 150.dp,
-                height = 150.dp
-            )
+            Image(painter = painterResource(R.drawable.ic_logo_m_pizzzeria)
+                , contentDescription = "null",modifier = Modifier.width(250.dp).height(200.dp))
             
             Spacer(Modifier.height(16.dp))
 
