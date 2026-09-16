@@ -207,22 +207,10 @@ class AppViewModel(
 
     fun syncProducts(onComplete: (Boolean) -> Unit = {}) {
         execute(loading = false,globalUiStateManager = globalUiStateManager) {
-            try {
-                dataUseCase.syncProducts()
-                val updatedProducts = dataUseCase.getProducts()
-                orderUiState = orderUiState.copy(
-                    products = updatedProducts,
-                    pizzaProducts = updatedProducts.filter { it.type == "1" },
-                    extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
-                    deliveryProducts = updatedProducts.filter { it.type == "4" }
-                )
-            } catch (e: Exception) {
-                Log.e("AppViewModel", "Error al sincronizar productos en Splash: ${e.message}")
-            } finally {
-                val localUser = io { dataUseCase.getUserLocal() }
-                println("AppViewModel: Sincronización finalizada. Total: ${orderUiState.products.size}")
+                val localUser = io {
+                    dataUseCase.getUserLocal()
+                }
                 onComplete(localUser != null)
-            }
         }
     }
 

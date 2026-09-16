@@ -1,9 +1,21 @@
 package com.pizzza.pizzzastore.ui.orders
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -11,27 +23,63 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Print
-import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import com.pizzza.pizzzastore.model.ParentOrderModel
 import com.pizzza.pizzzastore.ui.AppViewModel
-import com.valu.uitaycompose.utils.*
+import com.valu.uitaycompose.utils.tay_amber_400
+import com.valu.uitaycompose.utils.tay_blue_400
+import com.valu.uitaycompose.utils.tay_green_400
+import com.valu.uitaycompose.utils.tay_green_600
+import com.valu.uitaycompose.utils.tay_grey_400
+import com.valu.uitaycompose.utils.tay_purple_400
+import com.valu.uitaycompose.utils.tay_red_600
+import com.valu.uitaycompose.utils.textB10
+import com.valu.uitaycompose.utils.textB12
+import com.valu.uitaycompose.utils.textB14
+import com.valu.uitaycompose.utils.textB16
+import com.valu.uitaycompose.utils.textB20
+import com.valu.uitaycompose.utils.textM14
+import com.valu.uitaycompose.utils.textM16
+import com.valu.uitaycompose.utils.textS12
+import com.valu.uitaycompose.utils.textS14
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,16 +93,13 @@ fun OrderScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    
-    // Lógica Adaptativa fija a 2 columnas
+
     val columns = 2
 
     LaunchedEffect(uiState.selectedOrder) {
         showSheet = uiState.selectedOrder != null
     }
 
-    // Usamos isInitialLoaded para evitar el consumo repetitivo en cada giro de pantalla
-    // independientemente de si hay pedidos o no (casos con 0 registros).
     LaunchedEffect(Unit) {
         if (!uiState.isInitialLoaded) {
             viewModel.getGeneralOrderList()
@@ -137,7 +182,6 @@ fun OrderScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Indicadores de estado (Resumen con comportamiento de Botón)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -271,12 +315,12 @@ fun OrderCard(
     onStateChange: () -> Unit
 ) {
     val statusColor = when (order.state.trim().uppercase()) {
-        "CONFIRMADO" -> Color(0xFF3B82F6) // Azul
-        "RECEPCIONADO" -> Color(0xFF8B5CF6) // Violeta/Morado
-        "LISTO" -> Color(0xFF10B981)      // Verde
-        "ENVIADO" -> Color(0xFFF59E0B)    // Ámbar/Naranja
-        "ENTREGADO" -> Color(0xFF8A8D91)  // Gris
-        else -> Color(0xFF10B981)
+        "CONFIRMADO" -> tay_blue_400 // Azul
+        "RECEPCIONADO" -> tay_purple_400 // Violeta/Morado
+        "LISTO" -> tay_green_400      // Verde
+        "ENVIADO" -> tay_amber_400    // Ámbar/Naranja
+        "ENTREGADO" -> tay_grey_400  // Gris
+        else -> tay_green_400
     }
 
     Card(
@@ -294,7 +338,6 @@ fun OrderCard(
             )
 
             Column(modifier = Modifier.padding(12.dp)) {
-                // Fila 1: Nombre del Cliente y Estado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -496,8 +539,8 @@ fun StatusIndicator(
     count: Int,
     color: Color,
     selected: Boolean = false,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     Surface(
         color = if (selected) color else Color.White,
@@ -550,7 +593,6 @@ fun OrderDetailSheet(
                 .padding(16.dp)
                 .padding(bottom = 32.dp)
         ) {
-            // Header del Detalle
             Text(
                 text = "Detalle del Pedido",
                 style = textB20,

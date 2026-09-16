@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +31,7 @@ import com.valu.uitaycompose.utils.*
 @Composable
 fun ProductScreen(
     viewModel: StoreViewModel,
+    onNavigateToCreateProduct: () -> Unit,
     onNavigateToEditPizza: () -> Unit,
     onNavigateToEditOther: () -> Unit,
     onBack: () -> Unit
@@ -53,6 +55,24 @@ fun ProductScreen(
                             .iconColor(tay_red_600)
                     ) { _ ->
                         onBack.invoke()
+                    }
+                    
+                    // Botón de "+" para agregar producto en la parte superior derecha
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 8.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        IconButton(onClick = onNavigateToCreateProduct) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Crear Producto",
+                                tint = tay_red_600,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
                     }
                 }
             }

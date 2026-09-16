@@ -1,14 +1,28 @@
 package com.pizzza.pizzzastore.ui.menu
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,14 +32,12 @@ import com.valu.uitaycompose.extra.UiTayCToolBar
 import com.valu.uitaycompose.model.UiToolBarModel
 import com.valu.uitaycompose.utils.tay_red_50
 import com.valu.uitaycompose.utils.tay_red_600
-import com.valu.uitaycompose.utils.textB20
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuOptionsScreen(
     onNavigateToProducts: () -> Unit,
     onNavigateToBranches: () -> Unit,
-    onNavigateToCreateProduct: () -> Unit,
     onNavigateToConfigNoti: () -> Unit,
     onNavigateToListUser: () -> Unit,
     onReconnectPrinter: () -> Unit,
@@ -70,18 +82,6 @@ fun MenuOptionsScreen(
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = onNavigateToCreateProduct,
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
-            ) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = null)
-                Spacer(Modifier.width(12.dp))
-                Text("Crear Producto")
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
                 onClick = onNavigateToBranches,
                 modifier = Modifier.fillMaxWidth().height(60.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
@@ -112,7 +112,7 @@ fun MenuOptionsScreen(
             ) {
                 Icon(Icons.Default.Person, contentDescription = null)
                 Spacer(Modifier.width(12.dp))
-                Text("Crear usuario")
+                Text("Usuario")
             }
 
             Spacer(Modifier.height(16.dp))

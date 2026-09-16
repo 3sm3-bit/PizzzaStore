@@ -98,9 +98,6 @@ fun AppNavigation(
                 onNavigateToBranches = {
                     navController.navigate(Branches)
                 },
-                onNavigateToCreateProduct = {
-                    navController.navigate(CreateProduct)
-                },
                 onNavigateToConfigNoti = {
                     storeViewModel.getBranchesList()
                     navController.navigate(ConfigNoti)
@@ -191,6 +188,9 @@ fun AppNavigation(
             LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             ProductScreen(
                 viewModel = storeViewModel,
+                onNavigateToCreateProduct = {
+                    navController.navigate(CreateProduct)
+                },
                 onNavigateToEditPizza = {
                     navController.navigate(EditPizza)
                 },
