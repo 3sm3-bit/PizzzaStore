@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import com.pizzza.pizzzastore.R
 import com.pizzza.pizzzastore.ui.AppViewModel
 import com.valu.uitaycompose.swipe.UiTayGif
+import com.valu.uitaycompose.utils.tay_grey_100
+import com.valu.uitaycompose.utils.tay_grey_400
 import com.valu.uitaycompose.utils.tay_red_600
 import com.valu.uitaycompose.utils.textGabbiB35
 import kotlinx.coroutines.delay
@@ -62,34 +64,24 @@ fun SplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(tay_red_600),
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
             Image(painter = painterResource(R.drawable.ic_logo_m_pizzzeria)
                 , contentDescription = "null",modifier = Modifier.width(250.dp).height(200.dp))
-            
-            Spacer(Modifier.height(16.dp))
 
-            Text(
-                text = "PIZZZA APP",
-                color = Color.White,
-                fontSize = 42.sp,
-                style = textGabbiB35,
-                modifier = Modifier.scale(scale.value)
-            )
-            
             Spacer(Modifier.height(60.dp))
 
                 CircularProgressIndicator(
-                    color = Color.White,
+                    color = tay_red_600,
                     strokeWidth = 3.dp,
                     modifier = Modifier.size(36.dp)
                 )
                 Text(
                     text = "Cargando datos...",
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = tay_red_600.copy(alpha = 0.7f),
                     fontSize = 14.sp,
                     modifier = Modifier.padding(top = 16.dp)
                 )
