@@ -46,16 +46,8 @@ fun OrderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
-    // Lógica Adaptativa
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-    
-    val columns = when {
-        screenWidth < 600 -> 1 // Celular
-        isLandscape -> 4       // Tablet Horizontal
-        else -> 2              // Tablet Vertical
-    }
+    // Lógica Adaptativa fija a 2 columnas
+    val columns = 2
 
     LaunchedEffect(uiState.selectedOrder) {
         showSheet = uiState.selectedOrder != null
