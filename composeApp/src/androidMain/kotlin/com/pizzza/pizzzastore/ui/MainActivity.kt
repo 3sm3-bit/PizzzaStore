@@ -59,14 +59,13 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setDataGlobal() {
-        // Ejecutar la inicialización fuera del hilo principal usando lifecycleScope
-        lifecycleScope.launch {
-            val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
-            viewModel.setInitialSelectedBranchId(savedBranchId)
-            observeSocketForRefresh()
-            observeSessionChanges()
-            observeBranchIdChanges()
-        }
+        // Separamos completamente los observadores para que no se ejecuten síncronamente en el hilo de la UI
+        val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
+        viewModel.setInitialSelectedBranchId(savedBranchId)
+        
+        observeSocketForRefresh()
+        observeSessionChanges()
+        observeBranchIdChanges()
     }
 
     private fun observeSessionChanges() {

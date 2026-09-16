@@ -40,10 +40,12 @@ class AppViewModel(
             }
         }
 
-        // Cambiar a corrutina asíncrona segura
+        // Cambiar a corrutina asíncrona segura con cambio de contexto Main inmediato para mutar el State de la UI
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val user = dataUseCase.getUserLocal()
-            orderUiState = orderUiState.copy(userRole = user?.rol)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                orderUiState = orderUiState.copy(userRole = user?.rol)
+            }
             Log.d("AppViewModel", "🍕 Rol de usuario cargado: ${user?.rol}")
         }
     }
