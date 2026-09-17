@@ -1,5 +1,6 @@
 package com.pizzza.pizzzastore.ui
 
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,12 +16,14 @@ import com.pizzza.pizzzastore.ui.orders.OrderUiState
 import com.pizzza.pizzzastore.usecases.DataUseCase
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppViewModel(
     private val dataUseCase: DataUseCase,
     private val printerManager: BluetoothPrinterManager,
     private val webSocketManager: WebSocketManager,
     private val globalUiStateManager: GlobalUiStateManager,
+    private val prefs: SharedPreferences
 ) : BaseViewModel() {
 
     var orderUiState by mutableStateOf(OrderUiState())
@@ -40,13 +43,15 @@ class AppViewModel(
             }
         }
 
-        // Cambiar a corrutina asíncrona segura con cambio de contexto Main inmediato para mutar el State de la UI
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val user = dataUseCase.getUserLocal()
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                orderUiState = orderUiState.copy(userRole = user?.rol)
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                orderUiState = orderUiState.copy(
+                    userRole = user?.rol,
+                    selectedBranchId = user?.area ?: orderUiState.selectedBranchId
+                )
             }
-            Log.d("AppViewModel", "🍕 Rol de usuario cargado: ${user?.rol}")
+            Log.d("AppViewModel", "🍕 Perfil cargado - Rol: ${user?.rol}, Sucursal: ${user?.area}")
         }
     }
 
@@ -74,7 +79,24 @@ class AppViewModel(
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
         execute(globalUiStateManager = globalUiStateManager) {
             try {
+                // 1. Cargar pedidos
                 val response = dataUseCase.loadParentOrder()
+                
+                // 2. Cargar y filtrar conductores solo la primera vez (si la lista está vacía)
+                if (orderUiState.drivers.isEmpty()) {
+                    val localUser = io { dataUseCase.getUserLocal() }
+                    if (localUser != null) {
+                        val allUsers = try { io { dataUseCase.getUsers() } } catch (e: Exception) { emptyList() }
+                        // Filtramos: Aceptamos tanto "DRIVER" como "DRIVE" para compatibilidad con el backend
+                        val filteredDrivers = allUsers.filter { 
+                            val role = it.rol?.trim()?.uppercase() ?: ""
+                            role == "DRIVER" && it.area == localUser.area
+                        }
+                        orderUiState = orderUiState.copy(drivers = filteredDrivers)
+                        Log.d("AppViewModel", "🍕 Conductores cargados (Filtrados por area ${localUser.area}): ${filteredDrivers.size}")
+                    }
+                }
+
                 updateStateWithOrders(response)
                 orderUiState = orderUiState.copy(isInitialLoaded = true)
             } catch (e: Exception) {
@@ -110,7 +132,6 @@ class AppViewModel(
         val countEntregado = orders.count { it.state.trim().uppercase() == "ENTREGADO" }
         val countPendientes = orders.size - countEntregado
 
-        // Mantener o aplicar el filtro actual ("PENDIENTES" por defecto si es TODOS o vacío)
         val targetFilter = if (orderUiState.selectedFilter == "TODOS") "PENDIENTES" else orderUiState.selectedFilter
 
         val filtered = if (targetFilter == "ENTREGADO") {
@@ -140,8 +161,8 @@ class AppViewModel(
         )
     }
 
-    fun updateOrderState(order: ParentOrderModel, newState: String) {
-        if (order.state.trim().uppercase() == newState.uppercase()) return
+    fun updateOrderState(order: ParentOrderModel, newState: String, driverId: String? = null) {
+        if (order.state.trim().uppercase() == newState.uppercase() && driverId == null) return
 
         // 1. Guardar estado previo para Reversión (Rollback) en caso de error
         val previousState = orderUiState
@@ -149,24 +170,30 @@ class AppViewModel(
         // 2. Actualización Optimista: Actualizamos la UI inmediatamente
         Log.d(
             "AppViewModel",
-            "updateOrderState: Actualización optimista de ${order.uid} a $newState"
+            "updateOrderState: Actualización optimista de ${order.uid} a $newState (Driver: $driverId)"
         )
+        
+        val orderWithNewData = if (driverId != null) {
+            order.copy(state = newState, driverId = driverId)
+        } else {
+            order.copy(state = newState)
+        }
+
         val updatedOrders = orderUiState.orders.map {
-            if (it.uid == order.uid) it.copy(state = newState) else it
+            if (it.uid == order.uid) orderWithNewData else it
         }
         updateStateWithOrders(updatedOrders)
 
         // 3. Sincronización en segundo plano
-        // Usamos loading = false para que no aparezca el progreso global y la app se sienta "rápida"
-        execute(loading = false,globalUiStateManager = globalUiStateManager) {
+        execute(loading = false, globalUiStateManager = globalUiStateManager) {
             try {
-                dataUseCase.updateOrder(order.copy(state = newState))
+                dataUseCase.updateOrder(orderWithNewData)
                 Log.d("AppViewModel", "updateOrderState: Sincronización exitosa con servidor")
             } catch (e: Exception) {
                 // 4. Rollback: Si falla el servidor, devolvemos la UI a su estado anterior
                 Log.e("AppViewModel", "updateOrderState: Error al sincronizar. Revirtiendo UI.", e)
                 orderUiState = previousState
-                throw e // Permitimos que BaseViewModel muestre el diálogo de error
+                throw e
             }
         }
     }
@@ -218,10 +245,6 @@ class AppViewModel(
         orderUiState = orderUiState.copy(selectedOrder = order)
     }
 
-    fun updateSelectedBranchForNotifications(branchId: String) {
-        orderUiState = orderUiState.copy(selectedBranchId = branchId)
-    }
-
     fun setInitialSelectedBranchId(branchId: String) {
         orderUiState = orderUiState.copy(selectedBranchId = branchId)
     }
@@ -244,6 +267,7 @@ class AppViewModel(
     fun logout(onSuccess: () -> Unit) {
         execute(globalUiStateManager = globalUiStateManager) {
             io { dataUseCase.logout() }
+            prefs.edit().putString("selected_branch_id", "0").apply()
             onSuccess()
         }
     }

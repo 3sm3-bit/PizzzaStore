@@ -112,17 +112,27 @@ class WebSocketService : Service() {
                 return@launch
             }
 
-            // Obtener el branchId de las preferencias
-            val prefs = getSharedPreferences("pizza_prefs", Context.MODE_PRIVATE)
-            val branchId = prefs.getString("selected_branch_id", "1") ?: "1"
+            // Prioridad 1: Obtener el area del usuario logueado directamente de la DB
+            val branchIdFromUser = user.area
             
-            println("🍕 WebSocketService - Conectando a sucursal: $branchId")
-            webSocketManager.connect(branchId = branchId)
+            // Prioridad 2: Obtener de preferencias (por si acaso)
+            val prefs = getSharedPreferences("pizza_prefs", Context.MODE_PRIVATE)
+            val branchIdFromPrefs = prefs.getString("selected_branch_id", "0") ?: "0"
+            
+            // Usar el ID del usuario si es válido (no "0"), de lo contrario usar preferencias
+            val finalBranchId = if (branchIdFromUser != "0" && branchIdFromUser.isNotBlank()) {
+                branchIdFromUser
+            } else {
+                branchIdFromPrefs
+            }
+            
+            println("🍕 WebSocketService - Identificando conexión para sucursal: $finalBranchId (Origen User: $branchIdFromUser, Origen Prefs: $branchIdFromPrefs)")
+            webSocketManager.connect(branchId = finalBranchId)
 
             // Escuchar notificaciones
             webSocketManager.notifications
                 .onEach { notification ->
-                    println("🍕 Service - Pedido Recibido: ${notification.titulo}")
+                    println("🍕 WebSocketService - NOTIFICACIÓN RECIBIDA: ${notification.titulo} - ${notification.mensaje}")
                     
                     // Reproducir audio
                     audioQueueManager.enqueueAudio()

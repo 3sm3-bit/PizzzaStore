@@ -24,7 +24,7 @@ data class UserResponse(
     @SerialName("rol")
     val rol: String? = "CLIENTE",
     @SerialName("area")
-    val area: String? = "1",
+    val area: String? = "0",
     @SerialName("longitude")
     val longitude: String? = "",
     @SerialName("latitude")

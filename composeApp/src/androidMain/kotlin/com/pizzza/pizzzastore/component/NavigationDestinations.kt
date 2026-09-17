@@ -34,9 +34,6 @@ object Branches
 object CreateProduct
 
 @Serializable
-object ConfigNoti
-
-@Serializable
 object EditBranch
 
 @Serializable

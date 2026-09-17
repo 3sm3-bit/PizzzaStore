@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 import com.pizzza.pizzzastore.ui.branches.BranchScreen
 import com.pizzza.pizzzastore.ui.branches.EditBranchScreen
 import com.pizzza.pizzzastore.ui.login.LoginScreen
-import com.pizzza.pizzzastore.ui.menu.ConfigNotiScreen
 import com.pizzza.pizzzastore.ui.menu.ListUserScreen
 import com.pizzza.pizzzastore.ui.menu.MenuOptionsScreen
 import com.pizzza.pizzzastore.ui.orders.OrderScreen
@@ -98,10 +97,6 @@ fun AppNavigation(
                 onNavigateToBranches = {
                     navController.navigate(Branches)
                 },
-                onNavigateToConfigNoti = {
-                    storeViewModel.getBranchesList()
-                    navController.navigate(ConfigNoti)
-                },
                 onNavigateToListUser = {
                     storeViewModel.getUsersList()
                     navController.navigate(ListUser)
@@ -117,15 +112,6 @@ fun AppNavigation(
             LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
             CreateProductScreen(
                 viewModel = storeViewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable<ConfigNoti> {
-            LockScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-            ConfigNotiScreen(
-                appViewModel = viewModel,
-                storeViewModel = storeViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

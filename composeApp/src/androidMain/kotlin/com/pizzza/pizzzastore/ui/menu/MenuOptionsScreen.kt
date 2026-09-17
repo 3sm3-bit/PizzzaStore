@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -38,7 +37,6 @@ import com.valu.uitaycompose.utils.tay_red_600
 fun MenuOptionsScreen(
     onNavigateToProducts: () -> Unit,
     onNavigateToBranches: () -> Unit,
-    onNavigateToConfigNoti: () -> Unit,
     onNavigateToListUser: () -> Unit,
     onReconnectPrinter: () -> Unit,
     onBack: () -> Unit
@@ -89,18 +87,6 @@ fun MenuOptionsScreen(
                 Icon(Icons.Default.LocationOn, contentDescription = null)
                 Spacer(Modifier.width(12.dp))
                 Text("Sucursales")
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                onClick = onNavigateToConfigNoti,
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF44336))
-            ) {
-                Icon(Icons.Default.Notifications, contentDescription = null)
-                Spacer(Modifier.width(12.dp))
-                Text("Notificaciones")
             }
 
             Spacer(Modifier.height(16.dp))

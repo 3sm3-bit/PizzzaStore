@@ -53,21 +53,30 @@ fun RegisterScreen(
         storeViewModel.getBranchesList()
     }
 
-    // Efecto reactivo inteligente para auto-asignar la sucursal por defecto al rol DRIVER
-    // Añadimos una verificación adicional: si está en modo edición (uiState.isEditMode) y ya tiene un área asignada válida,
-    // respetamos su valor actual para no sobreescribir la sucursal del repartidor guardada en el servidor.
+    // Efecto reactivo inteligente para auto-asignar la sucursal por defecto al rol DRIVER o STORE
     LaunchedEffect(storeUiState.branches, uiState.rol) {
-        if (uiState.rol.uppercase() == "DRIVER") {
+        val currentRole = uiState.rol.uppercase()
+        if (currentRole == "DRIVER" || currentRole == "STORE") {
             if (storeUiState.branches.isEmpty()) {
+                // Si no hay sucursales, asignamos "1" por defecto para estos roles
                 viewModel.onRegisterFieldChange(area = "1")
             } else if (storeUiState.branches.size == 1) {
+                // Si hay una sola, la auto-seleccionamos
                 viewModel.onRegisterFieldChange(area = storeUiState.branches.first().identifier)
-            } else if (uiState.isEditMode && uiState.area.isNotBlank()) {
+            } else if (uiState.isEditMode && uiState.area.isNotBlank() && uiState.area != "0") {
                 // Al editar con múltiples sucursales, validamos que el área actual exista en el listado para mantenerla seleccionada
                 val exist = storeUiState.branches.any { it.identifier == uiState.area }
                 if (!exist) {
                     viewModel.onRegisterFieldChange(area = storeUiState.branches.first().identifier)
                 }
+            } else if (uiState.area == "0") {
+                // Si venía de otro rol y ahora es DRIVER/STORE, seleccionamos la primera por defecto
+                viewModel.onRegisterFieldChange(area = storeUiState.branches.first().identifier)
+            }
+        } else {
+            // Para cualquier otro rol (ADMIN, CLIENTE, etc), el área por defecto es "0"
+            if (uiState.area != "0") {
+                viewModel.onRegisterFieldChange(area = "0")
             }
         }
     }
@@ -272,8 +281,10 @@ fun RegisterScreen(
                     }
                 }
                 
-                // Mostrar la sección interactiva de sucursales únicamente si hay 2 o más opciones disponibles en la lista
-                if (uiState.rol.uppercase() == "DRIVER" && storeUiState.branches.size >= 2) {
+                // Mostrar la sección interactiva de sucursales únicamente si el rol es DRIVER o STORE
+                // y hay 2 o más opciones disponibles en la lista
+                val isBranchRequiredRole = uiState.rol.uppercase() == "DRIVER" || uiState.rol.uppercase() == "STORE"
+                if (isBranchRequiredRole && storeUiState.branches.size >= 2) {
                     item {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)

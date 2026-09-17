@@ -13,7 +13,7 @@ data class AuthUiState(
     val phone: String = "",
     val address: String = "",
     val rol: String = "CLIENTE",
-    val area: String = "1",
+    val area: String = "0",
     val longitude: String = "",
     val latitude: String = "",
     val selectedUser: com.pizzza.pizzzastore.repository.network.model.UserResponse? = null

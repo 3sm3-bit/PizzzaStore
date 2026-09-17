@@ -7,6 +7,7 @@ import com.pizzza.pizzzastore.repository.network.model.UserResponse
 import com.pizzza.pizzzastore.ui.base.BaseViewModel
 import com.pizzza.pizzzastore.ui.base.GlobalUiStateManager
 import com.pizzza.pizzzastore.usecases.DataUseCase
+import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,8 @@ import kotlin.collections.copy
 
 class AuthViewModel(
     private val dataUseCase: DataUseCase,
-    private val globalUiStateManager: GlobalUiStateManager
+    private val globalUiStateManager: GlobalUiStateManager,
+    private val prefs: SharedPreferences
 ) : BaseViewModel() {
 
     private val _authUiState = MutableStateFlow(AuthUiState())
@@ -46,7 +48,7 @@ class AuthViewModel(
                     phone = user.phone?.replace("+52", "") ?: "",
                     address = user.address ?: "",
                     rol = user.rol ?: "CLIENTE",
-                    area = user.area ?: "1",
+                    area = user.area ?: "0",
                     longitude = user.longitude ?: "",
                     latitude = user.latitude ?: "",
                     pass = "********" // Placeholder for edit
@@ -90,6 +92,9 @@ class AuthViewModel(
             )
 
             io { dataUseCase.saveUserLocal(userEntity) }
+
+            // Guardar automáticamente la sucursal del usuario en las preferencias para el Socket
+            prefs.edit().putString("selected_branch_id", userEntity.area).apply()
 
             _authUiState.update { it.copy(isLoginSuccessful = true) }
             onSuccess()

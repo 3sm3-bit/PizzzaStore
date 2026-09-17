@@ -2,6 +2,7 @@ package com.pizzza.pizzzastore.ui.orders
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -90,11 +92,17 @@ fun OrderScreen(
 ) {
     val uiState = viewModel.orderUiState
     var showSheet by remember { mutableStateOf(false) }
+    var showDriverSheet by remember { mutableStateOf(false) }
+    var orderForDriver by remember { mutableStateOf<ParentOrderModel?>(null) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val columns = 2
+    // Determinamos el número de columnas basado en el ancho de la pantalla (Tablet vs Celular)
+    // Usamos smallestScreenWidthDp para detectar tablets de 7 pulgadas o más (sw600dp)
+    // Esto asegura que en celulares siempre sea 1 columna y en tablets siempre sean 2.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val columns = if (configuration.smallestScreenWidthDp >= 600) 2 else 1
 
     LaunchedEffect(uiState.selectedOrder) {
         showSheet = uiState.selectedOrder != null
@@ -240,12 +248,26 @@ fun OrderScreen(
                                 textColor = Color(0xFF1C1E21),
                                 onDetailClick = { viewModel.selectOrder(order) },
                                 onStateChange = {
-                                    if (order.state.trim().uppercase() == "CONFIRMADO" && !uiState.isPrinterConnected) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
+                                    val currentState = order.state.trim().uppercase()
+                                    val isDelivery = order.reception.trim().uppercase().contains("DELIVERY")
+                                    
+                                    if (currentState == "LISTO" && isDelivery) {
+                                        val drivers = uiState.drivers
+                                        if (drivers.size >= 2) {
+                                            orderForDriver = order
+                                            showDriverSheet = true
+                                        } else {
+                                            val driverUid = if (drivers.size == 1) drivers.first().uid ?: "0" else "0"
+                                            viewModel.updateOrderState(order, "ENVIADO", driverId = driverUid)
                                         }
+                                    } else {
+                                        if (currentState == "CONFIRMADO" && !uiState.isPrinterConnected) {
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
+                                            }
+                                        }
+                                        viewModel.avanzarEstado(order)
                                     }
-                                    viewModel.avanzarEstado(order)
                                 }
                             )
 
@@ -265,6 +287,23 @@ fun OrderScreen(
                                 snackbarHostState.showSnackbar("⚠️ Impresora desconectada")
                             }
                         }
+                    }
+                )
+            }
+
+            if (showDriverSheet && orderForDriver != null) {
+                DriverSelectionSheet(
+                    drivers = uiState.drivers,
+                    onDismiss = { 
+                        showDriverSheet = false
+                        orderForDriver = null
+                    },
+                    onDriverSelected = { driverUid ->
+                        orderForDriver?.let { order ->
+                            viewModel.updateOrderState(order, "ENVIADO", driverId = driverUid)
+                        }
+                        showDriverSheet = false
+                        orderForDriver = null
                     }
                 )
             }
@@ -725,6 +764,115 @@ fun OrderDetailSheet(
                 Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("REIMPRIMIR TICKET", style = textB16)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DriverSelectionSheet(
+    drivers: List<com.pizzza.pizzzastore.repository.network.model.UserResponse>,
+    onDismiss: () -> Unit,
+    onDriverSelected: (String) -> Unit
+) {
+    var selectedDriverUid by remember { mutableStateOf("") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFFF0F2F5),
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text(
+                text = "Asignar Repartidor",
+                style = textB20,
+                color = Color(0xFF1C1E21)
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            if (drivers.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(150.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No hay repartidores disponibles",
+                        style = textM14,
+                        color = Color.Gray
+                    )
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
+                ) {
+                    items(drivers) { driver ->
+                        val isSelected = selectedDriverUid == driver.uid
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedDriverUid = driver.uid ?: "" }
+                        ) {
+                            Surface(
+                                color = if (isSelected) tay_blue_400 else tay_blue_400.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, tay_blue_400) else null,
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Smartphone,
+                                        contentDescription = null,
+                                        tint = if (isSelected) Color.White else tay_blue_400,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(6.dp))
+                            
+                            Text(
+                                text = driver.nameUser ?: "Driver",
+                                style = textB10,
+                                color = if (isSelected) tay_blue_400 else Color(0xFF1C1E21),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = { onDriverSelected(selectedDriverUid) },
+                    enabled = selectedDriverUid.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = tay_green_600,
+                        disabledContainerColor = Color.Gray.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = "CONFIRMAR ENVÍO",
+                        style = textB14,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
