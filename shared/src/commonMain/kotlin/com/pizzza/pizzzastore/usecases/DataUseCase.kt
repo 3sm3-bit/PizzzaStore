@@ -13,6 +13,8 @@ class DataUseCase(private val iDataNetwork: IDataNetwork) {
 
     suspend fun loadParentOrder(forceRefresh: Boolean = false) = iDataNetwork.loadParentOrder(forceRefresh)
 
+    suspend fun loadParentOrderByBranch(branchId: String, forceRefresh: Boolean = false) = iDataNetwork.loadParentOrderByBranch(branchId, forceRefresh)
+
     suspend fun updateOrder(data: ParentOrderModel) = iDataNetwork.updateOrder(data)
 
     suspend fun syncProducts() = iDataNetwork.syncProducts()
@@ -34,6 +36,8 @@ class DataUseCase(private val iDataNetwork: IDataNetwork) {
     suspend fun addBranch(data: BranchModel) = iDataNetwork.addBranch(data)
 
     suspend fun getUsers() = iDataNetwork.getUsers()
+
+    suspend fun getUsersByBranch(branchId: String) = iDataNetwork.getUsersByBranch(branchId)
 
     suspend fun deleteUser(id: String) = iDataNetwork.deleteUser(id)
 

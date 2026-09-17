@@ -26,6 +26,7 @@ data class OrderUiState(
     val drivers: List<com.pizzza.pizzzastore.repository.network.model.UserResponse> = emptyList(),
     val userFilter: String = "CLIENTE",
     val userRole: String? = null,
+    val userArea: String? = null,
     val isPrinterConnected: Boolean = false,
     val isSocketConnected: Boolean = false
 )

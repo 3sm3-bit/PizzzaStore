@@ -52,6 +52,7 @@ class AppViewModel(
             withContext(kotlinx.coroutines.Dispatchers.Main) {
                 orderUiState = orderUiState.copy(
                     userRole = user?.rol,
+                    userArea = user?.area,
                     selectedBranchId = user?.area ?: orderUiState.selectedBranchId
                 )
             }
@@ -73,7 +74,10 @@ class AppViewModel(
                     return@launch
                 } else {
                     withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        orderUiState = orderUiState.copy(userRole = user.rol)
+                        orderUiState = orderUiState.copy(
+                            userRole = user.rol,
+                            userArea = user.area
+                        )
                     }
                     proceedToLoadOrders()
                 }
@@ -90,23 +94,38 @@ class AppViewModel(
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
         execute(globalUiStateManager = globalUiStateManager) {
             try {
-                // 1. Cargar pedidos
-                val response = dataUseCase.loadParentOrder()
+                // Aseguramos tener el área más fresca posible
+                val currentArea = if (orderUiState.userArea.isNullOrBlank()) {
+                    io { dataUseCase.getUserLocal()?.area }
+                } else {
+                    orderUiState.userArea
+                }
+
+                // 1. Cargar pedidos usando el nuevo servicio por sucursal si el area está disponible
+                val response = if (!currentArea.isNullOrBlank() && currentArea != "0") {
+                    Log.d("AppViewModel", "Llamando servicio por sucursal: $currentArea")
+                    dataUseCase.loadParentOrderByBranch(currentArea)
+                } else {
+                    Log.d("AppViewModel", "Llamando servicio general (Area null o 0)")
+                    dataUseCase.loadParentOrder()
+                }
                 
-                // 2. Cargar y filtrar conductores solo la primera vez (si la lista está vacía)
+                // 2. Cargar y filtrar conductores usando el nuevo servicio por sucursal
                 if (orderUiState.drivers.isEmpty()) {
                     val localUser = io { dataUseCase.getUserLocal() }
-                    if (localUser != null) {
-                        val allUsers = try { io { dataUseCase.getUsers() } } catch (e: Exception) { emptyList() }
-                        // Filtramos: Aceptamos tanto "DRIVER" como "DRIVE" para compatibilidad con el backend
-                        val filteredDrivers = allUsers.filter { 
-                            val role = it.rol?.trim()?.uppercase() ?: ""
-                            role == "DRIVER" && it.area == localUser.area
+                    val currentAreaForDrivers = localUser?.area ?: orderUiState.userArea
+                    
+                    if (!currentAreaForDrivers.isNullOrBlank() && currentAreaForDrivers != "0") {
+                        val driversList = try { 
+                            io { dataUseCase.getUsersByBranch(currentAreaForDrivers) } 
+                        } catch (e: Exception) { 
+                            emptyList() 
                         }
+                        
                         withContext(kotlinx.coroutines.Dispatchers.Main) {
-                            orderUiState = orderUiState.copy(drivers = filteredDrivers)
+                            orderUiState = orderUiState.copy(drivers = driversList)
                         }
-                        Log.d("AppViewModel", "🍕 Conductores cargados (Filtrados por area ${localUser.area}): ${filteredDrivers.size}")
+                        Log.d("AppViewModel", "🍕 Conductores cargados desde servicio de sucursal $currentAreaForDrivers: ${driversList.size}")
                     }
                 }
 
@@ -129,7 +148,19 @@ class AppViewModel(
         Log.d("AppViewModel", "refresh: Forzando refresco")
         execute(globalUiStateManager = globalUiStateManager) {
             try {
-                val response = dataUseCase.loadParentOrder(forceRefresh = true)
+                // Aseguramos tener el área para el refresh
+                val currentArea = if (orderUiState.userArea.isNullOrBlank()) {
+                    io { dataUseCase.getUserLocal()?.area }
+                } else {
+                    orderUiState = orderUiState.copy(userArea = orderUiState.userArea) // Trigger state
+                    orderUiState.userArea
+                }
+
+                val response = if (!currentArea.isNullOrBlank() && currentArea != "0") {
+                    dataUseCase.loadParentOrderByBranch(currentArea, forceRefresh = true)
+                } else {
+                    dataUseCase.loadParentOrder(forceRefresh = true)
+                }
                 withContext(kotlinx.coroutines.Dispatchers.Main) {
                     updateStateWithOrders(response)
                 }

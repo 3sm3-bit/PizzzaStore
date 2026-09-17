@@ -15,6 +15,8 @@ interface IDataNetwork {
 
     suspend fun loadParentOrder(forceRefresh: Boolean = false): List<ParentOrderModel>
 
+    suspend fun loadParentOrderByBranch(branchId: String, forceRefresh: Boolean = false): List<ParentOrderModel>
+
     suspend fun syncProducts(): List<ProductModel>
 
     suspend fun getProducts(): List<ProductModel>
@@ -34,6 +36,8 @@ interface IDataNetwork {
     suspend fun addBranch(data: BranchModel): String
 
     suspend fun getUsers(): List<UserResponse>
+
+    suspend fun getUsersByBranch(branchId: String): List<UserResponse>
 
     suspend fun deleteUser(id: String): String
 

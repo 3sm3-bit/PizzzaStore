@@ -156,10 +156,46 @@ class DataNetwork(
         }
     }
 
+    override suspend fun loadParentOrderByBranch(branchId: String, forceRefresh: Boolean): List<ParentOrderModel> {
+        val dao = database.parentOrderDao()
+        val localOrders = dao.getAll()
+
+        println("DataNetwork: Iniciando loadParentOrderByBranch($branchId). forceRefresh=$forceRefresh, localCount=${localOrders.size}")
+
+        if (localOrders.isNotEmpty() && !forceRefresh) {
+            val models = localOrders.toModelListFromDb()
+            if (models.any { it.orders.isEmpty() }) {
+                println("DataNetwork: Datos locales incompletos. Forzando refresco.")
+            } else {
+                return models
+            }
+        }
+
+        if (!connectivityManager.isConnected()) {
+            if (localOrders.isNotEmpty()) return localOrders.toModelListFromDb()
+            throw ErrorNetwork()
+        }
+
+        return apiCall({
+            println("DataNetwork: Llamando al servicio getParentOrderByBranch($branchId)...")
+            apiService.getParentOrderByBranch(branchId)
+        }) { response ->
+            dao.deleteAll()
+            dao.insertAll(response.toEntityListFromResponse())
+            response.loadParentOrder()
+        }
+    }
+
     override suspend fun getUsers(): List<UserResponse> = apiCall({
         if (!connectivityManager.isConnected()) throw ErrorNetwork()
         println("DataNetwork: Cargando lista de usuarios...")
         apiService.getUsers()
+    }) { it }
+
+    override suspend fun getUsersByBranch(branchId: String): List<UserResponse> = apiCall({
+        if (!connectivityManager.isConnected()) throw ErrorNetwork()
+        println("DataNetwork: Cargando lista de usuarios por sucursal $branchId...")
+        apiService.getUsersByBranch(branchId)
     }) { it }
 
     override suspend fun deleteUser(id: String): String = apiCall {

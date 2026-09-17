@@ -54,6 +54,10 @@ class KmmService(private val client: HttpClient) {
         return client.get("${BASE_URL}/pizzzeria/order/generalOrder").body()
     }
 
+    suspend fun getParentOrderByBranch(branchId: String): List<ParentOrderResponse> {
+        return client.get("${BASE_URL}/pizzzeria/order/generalOrder/branch/$branchId").body()
+    }
+
     suspend fun getProducts(): List<ProductResponse> {
         return client.get("${BASE_URL}/pizzzeria/products").body()
     }
@@ -103,6 +107,10 @@ class KmmService(private val client: HttpClient) {
 
     suspend fun getUsers(): List<UserResponse> {
         return client.get("${BASE_URL}/services/user").body()
+    }
+
+    suspend fun getUsersByBranch(branchId: String): List<UserResponse> {
+        return client.get("${BASE_URL}/services/user/branch/$branchId").body()
     }
 
     suspend fun deleteUser(id: String): String {
