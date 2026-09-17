@@ -30,7 +30,6 @@ class AppViewModel(
         private set
 
     init {
-        // Mover la detección de impresora a un hilo secundario para evitar ANRs en el arranque
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             printerManager.autoDetectAndConnect()
         }
@@ -101,7 +100,6 @@ class AppViewModel(
                     orderUiState.userArea
                 }
 
-                // 1. Cargar pedidos usando el nuevo servicio por sucursal si el area está disponible
                 val response = if (!currentArea.isNullOrBlank() && currentArea != "0") {
                     Log.d("AppViewModel", "Llamando servicio por sucursal: $currentArea")
                     dataUseCase.loadParentOrderByBranch(currentArea)
