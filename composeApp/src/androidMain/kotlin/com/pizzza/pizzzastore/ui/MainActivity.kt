@@ -19,6 +19,9 @@ import android.util.Log
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.collectLatest
 import androidx.lifecycle.repeatOnLifecycle
+import android.os.PowerManager
+import android.provider.Settings
+import android.net.Uri
 
 class MainActivity : BaseActivity() {
 
@@ -65,9 +68,21 @@ class MainActivity : BaseActivity() {
             val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
             viewModel.setInitialSelectedBranchId(savedBranchId)
             
+            requestIgnoreBatteryOptimizations()
             observeSocketForRefresh()
             observeSessionChanges()
             observeBranchIdChanges()
+        }
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        val intent = Intent()
+        val packageName = packageName
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+            intent.action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
         }
     }
 
