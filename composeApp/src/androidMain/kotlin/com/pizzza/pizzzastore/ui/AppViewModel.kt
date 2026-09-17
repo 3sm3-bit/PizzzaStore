@@ -30,7 +30,11 @@ class AppViewModel(
         private set
 
     init {
-        printerManager.autoDetectAndConnect()
+        // Mover la detección de impresora a un hilo secundario para evitar ANRs en el arranque
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            printerManager.autoDetectAndConnect()
+        }
+        
         viewModelScope.launch {
             printerManager.isConnected.collectLatest { connected ->
                 orderUiState = orderUiState.copy(isPrinterConnected = connected)

@@ -59,13 +59,16 @@ class MainActivity : BaseActivity() {
     }
 
     override fun setDataGlobal() {
-        // Separamos completamente los observadores para que no se ejecuten síncronamente en el hilo de la UI
-        val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
-        viewModel.setInitialSelectedBranchId(savedBranchId)
-        
-        observeSocketForRefresh()
-        observeSessionChanges()
-        observeBranchIdChanges()
+        // Ejecutar la inicialización fuera del hilo principal usando lifecycleScope
+        // para garantizar que el Main Thread responda de inmediato a eventos de foco y clics.
+        lifecycleScope.launch {
+            val savedBranchId = prefs.getString("selected_branch_id", "1") ?: "1"
+            viewModel.setInitialSelectedBranchId(savedBranchId)
+            
+            observeSocketForRefresh()
+            observeSessionChanges()
+            observeBranchIdChanges()
+        }
     }
 
     private fun observeSessionChanges() {
