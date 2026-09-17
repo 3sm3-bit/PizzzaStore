@@ -59,8 +59,10 @@ class AppViewModel(
         }
     }
 
+    private var isFetchingOrders = false
+
     fun getGeneralOrderList() {
-        if (orderUiState.isInitialLoaded) return
+        if (orderUiState.isInitialLoaded || isFetchingOrders) return
         
         // Verificación de seguridad adicional: no llamar a la API si no hay sesión iniciada en la app
         if (orderUiState.userRole == null) {
@@ -70,7 +72,9 @@ class AppViewModel(
                     Log.d("AppViewModel", "getGeneralOrderList omitido: Sin sesión en base de datos local")
                     return@launch
                 } else {
-                    orderUiState = orderUiState.copy(userRole = user.rol)
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        orderUiState = orderUiState.copy(userRole = user.rol)
+                    }
                     proceedToLoadOrders()
                 }
             }
@@ -80,6 +84,9 @@ class AppViewModel(
     }
 
     private fun proceedToLoadOrders() {
+        if (isFetchingOrders) return
+        isFetchingOrders = true
+        
         Log.d("AppViewModel", "getGeneralOrderList: Iniciando ejecución")
         execute(globalUiStateManager = globalUiStateManager) {
             try {
@@ -96,29 +103,41 @@ class AppViewModel(
                             val role = it.rol?.trim()?.uppercase() ?: ""
                             role == "DRIVER" && it.area == localUser.area
                         }
-                        orderUiState = orderUiState.copy(drivers = filteredDrivers)
+                        withContext(kotlinx.coroutines.Dispatchers.Main) {
+                            orderUiState = orderUiState.copy(drivers = filteredDrivers)
+                        }
                         Log.d("AppViewModel", "🍕 Conductores cargados (Filtrados por area ${localUser.area}): ${filteredDrivers.size}")
                     }
                 }
 
-                updateStateWithOrders(response)
-                orderUiState = orderUiState.copy(isInitialLoaded = true)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    updateStateWithOrders(response)
+                    orderUiState = orderUiState.copy(isInitialLoaded = true)
+                }
             } catch (e: Exception) {
                 Log.e("AppViewModel", "Error en getGeneralOrderList: ${e.message}", e)
                 throw e
+            } finally {
+                isFetchingOrders = false
             }
         }
     }
 
     fun refresh() {
+        if (isFetchingOrders) return
+        isFetchingOrders = true
         Log.d("AppViewModel", "refresh: Forzando refresco")
         execute(globalUiStateManager = globalUiStateManager) {
             try {
                 val response = dataUseCase.loadParentOrder(forceRefresh = true)
-                updateStateWithOrders(response)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    updateStateWithOrders(response)
+                }
             } catch (e: Exception) {
                 Log.e("AppViewModel", "Error en refresh: ${e.message}", e)
                 throw e
+            } finally {
+                isFetchingOrders = false
             }
         }
     }
@@ -237,11 +256,24 @@ class AppViewModel(
     }
 
     fun syncProducts(onComplete: (Boolean) -> Unit = {}) {
-        execute(loading = false,globalUiStateManager = globalUiStateManager) {
-                val localUser = io {
-                    dataUseCase.getUserLocal()
+        execute(loading = false, globalUiStateManager = globalUiStateManager) {
+            try {
+                dataUseCase.syncProducts()
+                val updatedProducts = dataUseCase.getProducts()
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    orderUiState = orderUiState.copy(
+                        products = updatedProducts,
+                        pizzaProducts = updatedProducts.filter { it.type == "1" },
+                        extraProducts = updatedProducts.filter { it.type == "2" || it.type == "3" },
+                        deliveryProducts = updatedProducts.filter { it.type == "4" }
+                    )
                 }
+            } catch (e: Exception) {
+                Log.e("AppViewModel", "Error al sincronizar productos en Splash: ${e.message}")
+            } finally {
+                val localUser = io { dataUseCase.getUserLocal() }
                 onComplete(localUser != null)
+            }
         }
     }
 

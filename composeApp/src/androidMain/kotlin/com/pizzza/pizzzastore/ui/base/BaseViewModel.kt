@@ -28,8 +28,8 @@ open class BaseViewModel(
         loading: Boolean = true,
         globalUiStateManager: GlobalUiStateManager? = null,
         func: suspend BaseViewModel.() -> Unit,
-    ) {
-        viewModelScope.launch {
+    ): kotlinx.coroutines.Job {
+        return viewModelScope.launch {
             try {
                 updateUiState { currentState ->
                     currentState.copy(loading = loading, shimmer = true, error = false)
@@ -38,7 +38,7 @@ open class BaseViewModel(
                     currentState.copy(loading = loading, shimmer = true, error = false)
                 }
                 func()
-            } catch (ex: Exception) {
+            } catch (ex: Throwable) {
                 if (ex is CancellationException) {
                     throw ex
                 }
@@ -46,13 +46,13 @@ open class BaseViewModel(
                 updateUiState { currentState ->
                     currentState.copy(
                         error = true,
-                        errorType = ex
+                        errorType = Exception(ex.message ?: "Ocurrió un error inesperado")
                     )
                 }
                 globalUiStateManager?.updateUiState { currentState ->
                     currentState.copy(
                         error = true,
-                        errorType = ex
+                        errorType = Exception(ex.message ?: "Ocurrió un error inesperado")
                     )
                 }
             } finally {
